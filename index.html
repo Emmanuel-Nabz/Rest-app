@@ -1475,7 +1475,14 @@ function shareLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             function(position) {
-                var mapsUrl = 'https://www.google.com/maps?q=' + position.coords.latitude + ',' + position.coords.longitude;
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+
+                // 🆕 Save coordinates for the driver
+                window.tempCoordinates = { lat: lat, lng: lng };
+                console.log('📍 Coordinates saved:', window.tempCoordinates);
+
+                var mapsUrl = 'https://www.google.com/maps?q=' + lat + ',' + lng;
                 window.open(mapsUrl, '_blank');
                 status.textContent = '✅ Location opened in Google Maps. Copy the address and paste it above.';
                 status.style.color = '#27ae60';
@@ -1490,7 +1497,6 @@ function shareLocation() {
         status.style.color = '#e74c3c';
     }
 }
-
 // ============================================================
 // BOTTOM NAV
 // ============================================================
@@ -1559,15 +1565,24 @@ function initAutocomplete() {
             types: ['geocode', 'establishment'],
             componentRestrictions: { country: 'bh' }
         });
-        autocomplete.addListener('place_changed', function() {
-            var place = autocomplete.getPlace();
-            if (place.formatted_address) {
-                input.value = place.formatted_address;
-                var status = document.getElementById('locationStatus');
-                status.textContent = '✅ Address selected: ' + place.formatted_address;
-                status.style.color = '#27ae60';
-            }
-        });
+       autocomplete.addListener('place_changed', function() {
+    var place = autocomplete.getPlace();
+    if (place.formatted_address) {
+        input.value = place.formatted_address;
+        var status = document.getElementById('locationStatus');
+        status.textContent = '✅ Address selected: ' + place.formatted_address;
+        status.style.color = '#27ae60';
+
+        // 🆕 Save coordinates for the driver
+        if (place.geometry && place.geometry.location) {
+            window.tempCoordinates = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+            };
+            console.log('📍 Coordinates saved:', window.tempCoordinates);
+        }
+    }
+});
     } catch (e) {
         console.log('Google Places error:', e);
     }
