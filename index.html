@@ -1458,10 +1458,15 @@ function updateTrackingUI(status) {
         msg.style.color = info.color;
         msg.style.border = '2px solid ' + info.color;
     }
-    if (status === 'Delivered' || status === 'Cancelled') {
-        if (trackingInterval) { clearInterval(trackingInterval); trackingInterval = null; }
-        localStorage.removeItem('nabzTrackingOrderId');
-    }
+   if (status === 'Delivered' || status === 'Cancelled') {
+    if (trackingInterval) { clearInterval(trackingInterval); trackingInterval = null; }
+    localStorage.removeItem('nabzTrackingOrderId');
+    
+    // Auto-hide the banner after a moment so it doesn't block the UI
+    setTimeout(function() {
+        var section = document.getElementById('orderTrackingSection');
+        if (section) section.style.display = 'none';
+    }, 5000);
 }
 
 // ============================================================
