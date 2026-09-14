@@ -1093,14 +1093,17 @@ function customerLogin() {
 
     if (!phone) { errorEl.textContent = '❌ Please enter your phone number.'; return; }
 
-    fetch(API + '/customers')
-        .then(function(response) { return response.json(); })
-        .then(function(customers) {
-            var customer = customers.find(function(c) { return c.phone === phone; });
-            if (!customer) {
+    fetch(API + '/customers/lookup?phone=' + encodeURIComponent(phone))
+        .then(function(response) {
+            if (response.status === 404) {
                 errorEl.textContent = '❌ No account found. Please create one.';
-                return;
+                return null;
             }
+            if (!response.ok) throw new Error('Server error ' + response.status);
+            return response.json();
+        })
+        .then(function(customer) {
+            if (!customer) return;    // 404 handled above
             localStorage.setItem('nabzCurrentCustomer', JSON.stringify(customer));
             showCustomerWelcome(customer);
             prefillCustomerDetails(customer);
