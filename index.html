@@ -1662,11 +1662,12 @@ console.log('🚀 App loaded!');
 
 <!-- Service Worker -->
 <script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/restaurant-app/sw.js')
-            .then(function() { console.log('✅ Service Worker registered!'); })
-            .catch(function(error) { console.log('❌ Service Worker error:', error); });
-    }
+   // Service worker temporarily disabled to fix aggressive caching issues
+// if ('serviceWorker' in navigator) {
+//     navigator.serviceWorker.register('/sw.js')
+//         .then(function() { console.log('✅ Service Worker registered!'); })
+//         .catch(function(error) { console.log('❌ Service Worker error:', error); });
+// }
 </script>
 
 </body>
