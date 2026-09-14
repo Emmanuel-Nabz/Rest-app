@@ -22,9 +22,6 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
     <style>
-        /* ============================================================
-           RESET
-           ============================================================ */
         * {
             margin: 0;
             padding: 0;
@@ -46,9 +43,7 @@
         img { max-width: 100%; display: block; }
         button { font-family: inherit; }
 
-        /* ============================================================
-           WELCOME BANNER
-           ============================================================ */
+        /* ===== WELCOME BANNER ===== */
         #customerWelcome {
             display: none;
             background: #000;
@@ -73,9 +68,7 @@
             font-size: 0.9em;
         }
 
-        /* ============================================================
-           HEADER
-           ============================================================ */
+        /* ===== HEADER ===== */
         .app-header {
             text-align: center;
             padding: 80px 20px 70px;
@@ -111,9 +104,7 @@
             text-shadow: 0 2px 6px rgba(0,0,0,0.9);
         }
 
-        /* ============================================================
-           LOGIN SECTION (hidden by default)
-           ============================================================ */
+        /* ===== LOGIN SECTION ===== */
         #customerLoginSection {
             display: none;
             background: #565252;
@@ -158,9 +149,7 @@
         .btn-signup   { background: #27ae60; }
         .btn-cancel   { background: #95a5a6; }
 
-        /* ============================================================
-           CATEGORY TABS
-           ============================================================ */
+        /* ===== CATEGORY TABS ===== */
         .category-tabs {
             display: flex;
             flex-wrap: nowrap;
@@ -188,9 +177,7 @@
         .category-tab:hover { border-color: #3498db; color: #3498db; }
         .category-tab.active { background: #3498db; color: white; border-color: #3498db; }
 
-        /* ============================================================
-           MENU ITEM CARD
-           ============================================================ */
+        /* ===== MENU ITEM ===== */
         .menu-item-large {
             display: flex;
             background: white;
@@ -290,9 +277,7 @@
             color: #2c3e50;
         }
 
-        /* ============================================================
-           CART SECTION
-           ============================================================ */
+        /* ===== CART ===== */
         .cart-section {
             background: #e4e4e9;
             border-radius: 12px;
@@ -382,9 +367,7 @@
         }
         .checkout-btn:hover { background: #1e8449; }
 
-        /* ============================================================
-           FORMS
-           ============================================================ */
+        /* ===== FORMS ===== */
         .form-group { margin: 15px 0; }
         .form-group label {
             font-weight: 600;
@@ -427,24 +410,43 @@
         .location-btn:hover { background: #2980b9; }
         .location-status { font-size: 0.8em; color: #7f8c8d; margin-top: 6px; }
 
-        /* ============================================================
-           ORDER TRACKING
-           ============================================================ */
+        /* ===== ORDER TRACKING (FLOATING) ===== */
         #orderTrackingSection {
             display: none;
+            position: fixed;
+            bottom: 80px;
+            left: 10px;
+            right: 10px;
+            z-index: 999;
             background: white;
             border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            padding: 16px 18px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
             border-top: 4px solid #3498db;
+            margin: 0 auto;
+            max-width: 500px;
         }
-        #orderTrackingSection h2 { color: #2c3e50; margin-bottom: 15px; font-size: 1.1em; }
-        #trackingOrderId { font-size: 0.75em; color: #7f8c8d; }
+        #orderTrackingSection h2 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #trackingOrderId { font-size: 0.72em; color: #7f8c8d; font-weight: normal; }
+        #closeTrackingBtn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 1.3em;
+            color: #95a5a6;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 4px;
+        }
 
-        /* ============================================================
-           FOOTER
-           ============================================================ */
+        /* ===== FOOTER ===== */
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -455,9 +457,7 @@
         }
         .footer .brand-name { color: #fff; font-weight: bold; }
 
-        /* ============================================================
-           BOTTOM NAVIGATION
-           ============================================================ */
+        /* ===== BOTTOM NAV ===== */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -505,14 +505,8 @@
         }
         .bottom-nav .nav-item .badge.show { display: inline-block; }
 
-        /* ============================================================
-           NO ITEMS
-           ============================================================ */
         .no-items { text-align: center; color: #95a5a6; padding: 40px 0; font-size: 1em; }
 
-        /* ============================================================
-           POPUP ANIMATIONS
-           ============================================================ */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes bounceIn {
             0% { transform: scale(0.85); opacity: 0; }
@@ -535,9 +529,8 @@
     <p>Order your favorite food online — delivered to your door!</p>
 </div>
 
-<!-- ===== CUSTOMER LOGIN SECTION (hidden by default) ===== -->
+<!-- ===== CUSTOMER LOGIN SECTION ===== -->
 <div id="customerLoginSection">
-    <!-- Login Prompt -->
     <div id="loginPrompt">
         <h3>👤 Welcome!</h3>
         <p>Sign in to save your details for faster checkout</p>
@@ -551,7 +544,6 @@
         </div>
     </div>
 
-    <!-- Login Form -->
     <div id="customerLoginForm" style="display: none;">
         <h3>Sign In</h3>
         <div class="form-group">
@@ -565,7 +557,6 @@
         <div id="custLoginError" style="color: #e74c3c; margin-top: 10px;"></div>
     </div>
 
-    <!-- Register Form -->
     <div id="customerRegisterForm" style="display: none;">
         <h3>Create Account</h3>
         <div class="form-group">
@@ -619,29 +610,6 @@
     <div class="grand-total">
         <span>Total:</span>
         <span id="grandTotal">BD 0.500</span>
-    </div>
-
-    <!-- ===== ORDER TRACKING ===== -->
-    <div id="orderTrackingSection">
-        <h2>
-            <i class="fas fa-box"></i> Track Your Order
-            <span id="trackingOrderId"></span>
-        </h2>
-        <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.72em; color: #95a5a6; gap: 4px;">
-                <span>🆕 New</span>
-                <span>✅ Confirmed</span>
-                <span>👨‍🍳 Preparing</span>
-                <span>🛵 On the Way</span>
-                <span>🎉 Delivered</span>
-            </div>
-            <div style="height: 8px; background: #ecf0f1; border-radius: 10px; overflow: hidden;">
-                <div id="statusBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3498db, #27ae60); transition: width 0.6s ease;"></div>
-            </div>
-        </div>
-        <div id="statusMessage" style="text-align: center; padding: 15px; border-radius: 10px; font-weight: 600; font-size: 0.95em; background: #ecf0f1; color: #2c3e50;">
-            Loading status...
-        </div>
     </div>
 
     <!-- ===== CONTACT DETAILS ===== -->
@@ -725,6 +693,30 @@
 <!-- ===== FOOTER ===== -->
 <div class="footer">
     <p>&copy; 2026 <span class="brand-name">Nabz-Tech Eats</span>. All rights reserved.</p>
+</div>
+
+<!-- ===== ORDER TRACKING (FLOATING) ===== -->
+<div id="orderTrackingSection">
+    <h2>
+        <i class="fas fa-box"></i> Track Your Order
+        <span id="trackingOrderId"></span>
+        <button id="closeTrackingBtn" onclick="hideTrackingBanner()">×</button>
+    </h2>
+    <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.68em; color: #95a5a6; gap: 3px;">
+            <span>🆕 New</span>
+            <span>✅ Confirmed</span>
+            <span>👨‍🍳 Preparing</span>
+            <span>🛵 On the Way</span>
+            <span>🎉 Delivered</span>
+        </div>
+        <div style="height: 6px; background: #ecf0f1; border-radius: 10px; overflow: hidden;">
+            <div id="statusBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3498db, #27ae60); transition: width 0.6s ease;"></div>
+        </div>
+    </div>
+    <div id="statusMessage" style="text-align: center; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.88em; background: #ecf0f1; color: #2c3e50;">
+        Loading status...
+    </div>
 </div>
 
 <!-- ===== BOTTOM NAVIGATION ===== -->
@@ -1043,7 +1035,6 @@ function customerLogin() {
             showCustomerWelcome(customer);
             prefillCustomerDetails(customer);
 
-            // If the customer came from checkout, resume automatically
             if (pendingCheckout) {
                 pendingCheckout = false;
                 setTimeout(checkout, 100);
@@ -1129,7 +1120,6 @@ function checkCustomerLogin() {
 // CHECKOUT / VERIFICATION
 // ============================================================
 function checkout() {
-    // Require login first
     var customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
     if (!customer) {
         pendingCheckout = true;
@@ -1461,7 +1451,17 @@ function updateTrackingUI(status) {
     if (status === 'Delivered' || status === 'Cancelled') {
         if (trackingInterval) { clearInterval(trackingInterval); trackingInterval = null; }
         localStorage.removeItem('nabzTrackingOrderId');
+        setTimeout(function() {
+            var section = document.getElementById('orderTrackingSection');
+            if (section) section.style.display = 'none';
+        }, 8000);
     }
+}
+
+function hideTrackingBanner() {
+    var section = document.getElementById('orderTrackingSection');
+    if (section) section.style.display = 'none';
+    if (trackingInterval) { clearInterval(trackingInterval); trackingInterval = null; }
 }
 
 // ============================================================
@@ -1549,7 +1549,7 @@ function showOrderHistory() {
 }
 
 // ============================================================
-// GOOGLE PLACES AUTOCOMPLETE
+// GOOGLE PLACES
 // ============================================================
 function initAutocomplete() {
     var input = document.getElementById('deliveryAddress');
@@ -1595,17 +1595,7 @@ renderCart();
 console.log('🚀 App loaded!');
 </script>
 
-<!-- Google Places -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQJlGOj-bHTmrw88BV6jXH-ZDA3sOx4x4&libraries=places&callback=initAutocomplete" async defer></script>
-
-<!-- Service Worker (disabled to fix cache issues) -->
-<script>
-    // if ('serviceWorker' in navigator) {
-    //     navigator.serviceWorker.register('/sw.js')
-    //         .then(function() { console.log('✅ Service Worker registered!'); })
-    //         .catch(function(error) { console.log('❌ Service Worker error:', error); });
-    // }
-</script>
 
 </body>
 </html>
