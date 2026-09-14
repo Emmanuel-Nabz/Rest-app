@@ -1153,6 +1153,7 @@ function showCustomerWelcome(customer) {
     document.getElementById('loginPrompt').style.display = 'none';
     document.getElementById('customerLoginForm').style.display = 'none';
     document.getElementById('customerRegisterForm').style.display = 'none';
+    document.getElementById('customerLoginSection').style.display = 'none';   // ⬅️ hide the whole container
     document.getElementById('customerWelcome').style.display = 'flex';
     document.getElementById('welcomeName').textContent = '👤 ' + customer.name;
 }
@@ -1167,6 +1168,7 @@ function customerLogout() {
     if (!confirm('Logout?')) return;
     localStorage.removeItem('nabzCurrentCustomer');
     document.getElementById('customerWelcome').style.display = 'none';
+    document.getElementById('customerLoginSection').style.display = 'block';   // ⬅️ show container again
     document.getElementById('loginPrompt').style.display = 'block';
     document.getElementById('customerName').value = '';
     document.getElementById('customerPhone').value = '';
