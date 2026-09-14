@@ -197,8 +197,7 @@
         /* ============================================================
            MENU ITEM CARD
            ============================================================ */
-        
-       .menu-item-large {
+           .menu-item-large {
     display: flex;
     background: white;
     border-radius: 14px;
@@ -234,6 +233,40 @@
     gap: 3px;
     overflow: hidden;
 }
+        
+        .menu-item-large:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+       
+        .menu-item-large .item-details h3 {
+            font-size: 1em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 3px;
+            line-height: 1.2;
+        }
+        .menu-item-large .item-details .desc {
+            font-size: 0.8em;
+            color: #7c9495;
+            line-height: 1.3;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .menu-item-large .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .menu-item-large .price {
+            font-weight: bold;
+            color: #129649;
+            font-size: 1.05em;
+        }
         .item-actions {
             display: flex;
             align-items: center;
