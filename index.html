@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nabz-Tech Eats</title>
-    <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nabz-Tech Eats</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -24,9 +20,6 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 
     <style>
         /* ============================================================
@@ -39,9 +32,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        html, body {
-            overflow-x: hidden;
-        }
+        html, body { overflow-x: hidden; }
         body {
             background: #262722;
             padding: 10px;
@@ -86,46 +77,52 @@
            HEADER
            ============================================================ */
         .app-header {
-    text-align: center;
-    padding: 80px 20px 70px;   /* ⬅️ bigger top and bottom padding = taller banner */
-    border-bottom: 4px solid #e67e22;
-    margin-bottom: 20px;
-    background-image: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.40)), url('back.png');
-    background-size: cover;
-    background-position: center;
-    border-radius: 16px;
-    color: white;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.95);
-    min-height: 220px;          /* ⬅️ also sets a minimum height */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-.app-header h1 {
-    font-size: 2.8em;
-    font-weight: 900;        /* ⬅️ was probably 700 or bold — 900 is the heaviest */
-    letter-spacing: -0.5px;
-    color: #ffffff;
-    margin-bottom: 8px;
-    text-shadow:
-        0 2px 6px rgba(0, 0, 0, 1),
-        0 4px 20px rgba(0, 0, 0, 0.9),
-        0 0 40px rgba(0, 0, 0, 0.6);
-    line-height: 1.1;
-}
-        
+            text-align: center;
+            padding: 80px 20px 70px;
+            border-bottom: 4px solid #e67e22;
+            margin-bottom: 20px;
+            background-image: linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.40)), url('back.png');
+            background-size: cover;
+            background-position: center;
+            border-radius: 16px;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.95);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .app-header h1 {
+            font-size: 2.8em;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            text-shadow:
+                0 2px 6px rgba(0, 0, 0, 1),
+                0 4px 20px rgba(0, 0, 0, 0.9),
+                0 0 40px rgba(0, 0, 0, 0.6);
+            line-height: 1.1;
+        }
+        .app-header p {
+            color: #f6f9fd;
+            font-size: 1em;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+        }
+
         /* ============================================================
-           LOGIN SECTION
+           LOGIN SECTION (hidden by default)
            ============================================================ */
         #customerLoginSection {
+            display: none;
             background: #565252;
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.06);
         }
-        #customerLoginSection h3 { color: #070d13; margin-bottom: 10px; font-size: 1.15em; }
+        #customerLoginSection h3 { color: #fff; margin-bottom: 10px; font-size: 1.15em; }
         #customerLoginSection p { color: #f6f8f9; font-size: 0.9em; margin-bottom: 15px; }
         #customerLoginSection .form-group { margin: 12px 0; }
         #customerLoginSection .form-group label {
@@ -144,10 +141,7 @@
             background: #fff;
             color: #2c3e50;
         }
-        #customerLoginSection .input-field:focus {
-            border-color: #3498db;
-            outline: none;
-        }
+        #customerLoginSection .input-field:focus { border-color: #3498db; outline: none; }
         .login-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
         .login-buttons button {
             flex: 1 1 auto;
@@ -197,48 +191,44 @@
         /* ============================================================
            MENU ITEM CARD
            ============================================================ */
-           .menu-item-large {
-    display: flex;
-    background: white;
-    border-radius: 14px;
-    padding: 0;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-    border: 1px solid #ecf0f1;
-    overflow: hidden;
-    align-items: stretch;
-    transition: all 0.3s;
-    height: 130px;                 /* FIXED height — this is the key */
-}
-
-.menu-item-large .item-image {
-    flex-shrink: 0;
-    width: 130px;                  /* width of the image */
-    height: 130px;                 /* SAME as card height */
-    object-fit: cover;             /* fill and crop */
-    object-position: center;       /* crop from center */
-    border-radius: 0;              /* ⬅️ no rounding, card handles it */
-    background: #ecf0f1;
-    display: block;
-    margin: 0;                     /* no margins */
-}
-
-.menu-item-large .item-details {
-    flex: 1;
-    min-width: 0;
-    padding: 12px 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 3px;
-    overflow: hidden;
-}
-        
+        .menu-item-large {
+            display: flex;
+            background: white;
+            border-radius: 14px;
+            padding: 0;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            border: 1px solid #ecf0f1;
+            overflow: hidden;
+            align-items: stretch;
+            transition: all 0.3s;
+            height: 130px;
+        }
         .menu-item-large:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
-       
+        .menu-item-large .item-image {
+            flex-shrink: 0;
+            width: 130px;
+            height: 130px;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 0;
+            background: #ecf0f1;
+            display: block;
+            margin: 0;
+        }
+        .menu-item-large .item-details {
+            flex: 1;
+            min-width: 0;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3px;
+            overflow: hidden;
+        }
         .menu-item-large .item-details h3 {
             font-size: 1em;
             font-weight: 700;
@@ -361,12 +351,7 @@
             text-align: right;
             font-size: 0.9em;
         }
-        .empty-cart {
-            color: #95a5a6;
-            text-align: center;
-            padding: 20px 0;
-            font-size: 0.95em;
-        }
+        .empty-cart { color: #95a5a6; text-align: center; padding: 20px 0; font-size: 0.95em; }
         .cart-total, .delivery-row, .grand-total {
             display: flex;
             justify-content: space-between;
@@ -454,11 +439,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.06);
             border-top: 4px solid #3498db;
         }
-        #orderTrackingSection h2 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
+        #orderTrackingSection h2 { color: #2c3e50; margin-bottom: 15px; font-size: 1.1em; }
         #trackingOrderId { font-size: 0.75em; color: #7f8c8d; }
 
         /* ============================================================
@@ -530,24 +511,14 @@
         .no-items { text-align: center; color: #95a5a6; padding: 40px 0; font-size: 1em; }
 
         /* ============================================================
-           RESPONSIVE — TABLETS/SMALL DESKTOPS
-           ============================================================ */
-       
-        /* ============================================================
            POPUP ANIMATIONS
            ============================================================ */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes bounceIn {
             0% { transform: scale(0.85); opacity: 0; }
             70% { transform: scale(1.02); }
             100% { transform: scale(1); opacity: 1; }
         }
-       #customerLoginSection {
-    display: none;
-}
     </style>
 </head>
 <body>
@@ -564,8 +535,9 @@
     <p>Order your favorite food online — delivered to your door!</p>
 </div>
 
-<!-- ===== CUSTOMER LOGIN SECTION ===== -->
+<!-- ===== CUSTOMER LOGIN SECTION (hidden by default) ===== -->
 <div id="customerLoginSection">
+    <!-- Login Prompt -->
     <div id="loginPrompt">
         <h3>👤 Welcome!</h3>
         <p>Sign in to save your details for faster checkout</p>
@@ -579,8 +551,9 @@
         </div>
     </div>
 
-   <div id="customerLoginSection" style="display: none; background: rgb(86, 82, 82); padding: 20px; border-radius: 12px; margin-bottom: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.06);"></div>
-        <h3 style="color: #fff; margin-bottom: 12px;">Sign In</h3>
+    <!-- Login Form -->
+    <div id="customerLoginForm" style="display: none;">
+        <h3>Sign In</h3>
         <div class="form-group">
             <label><i class="fas fa-phone"></i> Phone Number</label>
             <input type="tel" id="custLoginPhone" class="input-field" placeholder="Enter phone number">
@@ -592,8 +565,9 @@
         <div id="custLoginError" style="color: #e74c3c; margin-top: 10px;"></div>
     </div>
 
+    <!-- Register Form -->
     <div id="customerRegisterForm" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 12px;">Create Account</h3>
+        <h3>Create Account</h3>
         <div class="form-group">
             <label><i class="fas fa-user"></i> Full Name</label>
             <input type="text" id="custRegName" class="input-field" placeholder="Enter your name">
@@ -756,25 +730,20 @@
 <!-- ===== BOTTOM NAVIGATION ===== -->
 <div class="bottom-nav">
     <button class="nav-item active" onclick="scrollToTop()">
-        <i class="fas fa-home"></i>
-        <span>Home</span>
+        <i class="fas fa-home"></i><span>Home</span>
     </button>
     <button class="nav-item" onclick="scrollToMenu()">
-        <i class="fas fa-utensils"></i>
-        <span>Menu</span>
+        <i class="fas fa-utensils"></i><span>Menu</span>
     </button>
     <button class="nav-item" onclick="scrollToCart()">
-        <i class="fas fa-shopping-cart"></i>
-        <span>Cart</span>
+        <i class="fas fa-shopping-cart"></i><span>Cart</span>
         <span class="badge" id="navCartBadge"></span>
     </button>
     <button class="nav-item" onclick="showOrderHistory()">
-        <i class="fas fa-clock-rotate-left"></i>
-        <span>Orders</span>
+        <i class="fas fa-clock-rotate-left"></i><span>Orders</span>
     </button>
     <button class="nav-item" onclick="scrollToContact()">
-        <i class="fas fa-envelope"></i>
-        <span>Contact</span>
+        <i class="fas fa-envelope"></i><span>Contact</span>
     </button>
 </div>
 
@@ -789,6 +758,7 @@ var cart = [];
 var menuCategories = [];
 var trackingInterval = null;
 var currentTrackingOrderId = null;
+var pendingCheckout = false;
 
 // ============================================================
 // CART
@@ -797,9 +767,7 @@ function loadCart() {
     try {
         var saved = JSON.parse(localStorage.getItem('nabzCart'));
         if (Array.isArray(saved)) cart = saved;
-    } catch (e) {
-        cart = [];
-    }
+    } catch (e) { cart = []; }
 }
 
 function saveCart() {
@@ -893,7 +861,6 @@ function loadMenuFromStorage() {
             });
 
             menuCategories = Object.keys(categories).map(function(k) { return categories[k]; });
-
             renderTabs();
             renderMenu();
             renderCart();
@@ -999,12 +966,8 @@ function updateQuantity(id, change) {
     var qtyDisplay = document.getElementById('qty-' + id);
     var minusBtn = document.querySelector('#item-' + id + ' .minus-btn');
     if (qtyDisplay) {
-        if (newQuantity > 0) {
-            qtyDisplay.textContent = newQuantity;
-            qtyDisplay.style.display = 'inline-block';
-        } else {
-            qtyDisplay.style.display = 'none';
-        }
+        qtyDisplay.textContent = newQuantity;
+        qtyDisplay.style.display = newQuantity > 0 ? 'inline-block' : 'none';
     }
     if (minusBtn) {
         minusBtn.style.display = newQuantity > 0 ? 'inline-flex' : 'none';
@@ -1018,7 +981,6 @@ function updateCartQuantity(id, change) {
     if (!item) return;
 
     var newQuantity = item.quantity + change;
-
     if (newQuantity <= 0) {
         cart = cart.filter(function(i) { return i.id !== id; });
     } else {
@@ -1028,28 +990,19 @@ function updateCartQuantity(id, change) {
     var qtyDisplay = document.getElementById('qty-' + id);
     var minusBtn = document.querySelector('#item-' + id + ' .minus-btn');
     if (qtyDisplay) {
-        if (newQuantity > 0) {
-            qtyDisplay.textContent = newQuantity;
-            qtyDisplay.style.display = 'inline-block';
-        } else {
-            qtyDisplay.style.display = 'none';
-        }
+        qtyDisplay.textContent = newQuantity;
+        qtyDisplay.style.display = newQuantity > 0 ? 'inline-block' : 'none';
     }
     if (minusBtn) {
         minusBtn.style.display = newQuantity > 0 ? 'inline-flex' : 'none';
     }
-
     saveCart();
     renderCart();
 }
 
 // ============================================================
-// CUSTOMER LOGIN
-// ============================================================
-// ============================================================
 // CUSTOMER LOGIN / REGISTER
 // ============================================================
-
 function showCustomerLogin() {
     document.getElementById('loginPrompt').style.display = 'none';
     document.getElementById('customerRegisterForm').style.display = 'none';
@@ -1090,9 +1043,9 @@ function customerLogin() {
             showCustomerWelcome(customer);
             prefillCustomerDetails(customer);
 
-            // If the customer is on the checkout screen, resume placing the order
-            if (window.pendingCheckout) {
-                window.pendingCheckout = false;
+            // If the customer came from checkout, resume automatically
+            if (pendingCheckout) {
+                pendingCheckout = false;
                 setTimeout(checkout, 100);
             }
         })
@@ -1126,8 +1079,8 @@ function customerRegister() {
         showCustomerWelcome(customer);
         prefillCustomerDetails(customer);
 
-        if (window.pendingCheckout) {
-            window.pendingCheckout = false;
+        if (pendingCheckout) {
+            pendingCheckout = false;
             setTimeout(checkout, 100);
         }
     })
@@ -1141,7 +1094,7 @@ function showCustomerWelcome(customer) {
     document.getElementById('loginPrompt').style.display = 'none';
     document.getElementById('customerLoginForm').style.display = 'none';
     document.getElementById('customerRegisterForm').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'none';  // hide whole section
+    document.getElementById('customerLoginSection').style.display = 'none';
     document.getElementById('customerWelcome').style.display = 'flex';
     document.getElementById('welcomeName').textContent = '👤 ' + customer.name;
 }
@@ -1156,7 +1109,7 @@ function customerLogout() {
     if (!confirm('Logout?')) return;
     localStorage.removeItem('nabzCurrentCustomer');
     document.getElementById('customerWelcome').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'none';  // stay hidden
+    document.getElementById('customerLoginSection').style.display = 'none';
     document.getElementById('customerName').value = '';
     document.getElementById('customerPhone').value = '';
     document.getElementById('deliveryAddress').value = '';
@@ -1168,148 +1121,31 @@ function checkCustomerLogin() {
         showCustomerWelcome(customer);
         prefillCustomerDetails(customer);
     } else {
-        // Fresh visit — keep login section hidden until needed
         document.getElementById('customerLoginSection').style.display = 'none';
     }
 }
-function customerRegister() {
-    var name = document.getElementById('custRegName').value.trim();
-    var phone = document.getElementById('custRegPhone').value.trim();
-    var address = document.getElementById('custRegAddress').value.trim();
-    var errorEl = document.getElementById('custRegError');
-    errorEl.textContent = '';
-
-    if (!name) { errorEl.textContent = '❌ Please enter your name.'; return; }
-    if (!phone) { errorEl.textContent = '❌ Please enter your phone number.'; return; }
-    if (!address) { errorEl.textContent = '❌ Please enter your address.'; return; }
-
-    fetch(API + '/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, phone: phone, address: address })
-    })
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-        if (data.error) { errorEl.textContent = '❌ ' + data.error; return; }
-        var customer = { name: name, phone: phone, address: address };
-        localStorage.setItem('nabzCurrentCustomer', JSON.stringify(customer));
-        showCustomerWelcome(customer);
-        prefillCustomerDetails(customer);
-    })
-    .catch(function(error) {
-        console.error('Register error:', error);
-        errorEl.textContent = '❌ Could not connect to server.';
-    });
-}
-
-function showCustomerWelcome(customer) {
-    function showCustomerWelcome(customer) {
-    document.getElementById('loginPrompt').style.display = 'none';
-    document.getElementById('customerLoginForm').style.display = 'none';
-    document.getElementById('customerRegisterForm').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'none';  // ⬅️ add this
-    document.getElementById('customerWelcome').style.display = 'flex';
-    document.getElementById('welcomeName').textContent = '👤 ' + customer.name;
-}
-    document.getElementById('loginPrompt').style.display = 'none';
-    document.getElementById('customerLoginForm').style.display = 'none';
-    document.getElementById('customerRegisterForm').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'none';   // ⬅️ hide the whole container
-    document.getElementById('customerWelcome').style.display = 'flex';
-    document.getElementById('welcomeName').textContent = '👤 ' + customer.name;
-}
-
-function prefillCustomerDetails(customer) {
-    document.getElementById('customerName').value = customer.name;
-    document.getElementById('customerPhone').value = customer.phone;
-    document.getElementById('deliveryAddress').value = customer.address;
-}
-
-function customerLogout() {
-    function checkout() {
-    // Check if customer is logged in
-    var customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
-    
-    if (!customer) {
-        // Show the login section and scroll to it
-        document.getElementById('customerLoginSection').style.display = 'block';
-        document.getElementById('loginPrompt').style.display = 'block';
-        document.getElementById('customerLoginForm').style.display = 'none';
-        document.getElementById('customerRegisterForm').style.display = 'none';
-        
-        // Scroll to it
-        document.getElementById('customerLoginSection').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
-        function customerLogout() {
-    if (!confirm('Logout?')) return;
-    localStorage.removeItem('nabzCurrentCustomer');
-    document.getElementById('customerWelcome').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'none';  // ⬅️ hidden, not shown
-    document.getElementById('loginPrompt').style.display = 'block';
-    document.getElementById('customerName').value = '';
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('deliveryAddress').value = '';
-}
-        // Optionally notify
-        // (uncomment if you want an alert as well)
-        // alert('Please sign in or create an account to place your order.');
-        
-        return;
-    }
-
-    // ...rest of your existing checkout code...
-    if (cart.length === 0) {
-        alert('🛒 Your cart is empty! Add some items first.');
-        return;
-    }
-    
-    // ...rest
-}
-    if (!confirm('Logout?')) return;
-    localStorage.removeItem('nabzCurrentCustomer');
-    document.getElementById('customerWelcome').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'block';   // ⬅️ show container again
-    document.getElementById('loginPrompt').style.display = 'block';
-    document.getElementById('customerName').value = '';
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('deliveryAddress').value = '';
 
 // ============================================================
 // CHECKOUT / VERIFICATION
 // ============================================================
 function checkout() {
-   function checkout() {
-    // Check if customer is logged in
+    // Require login first
     var customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
-
     if (!customer) {
-        // Remember that the user wanted to checkout
-        window.pendingCheckout = true;
-
-        // Show the login section and scroll to it
-        document.getElementById('customerLoginSection').style.display = 'block';
+        pendingCheckout = true;
+        var section = document.getElementById('customerLoginSection');
+        section.style.display = 'block';
         document.getElementById('loginPrompt').style.display = 'block';
         document.getElementById('customerLoginForm').style.display = 'none';
         document.getElementById('customerRegisterForm').style.display = 'none';
-
-        document.getElementById('customerLoginSection').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
 
-    // ...rest of your existing checkout code stays unchanged...
     if (cart.length === 0) {
         alert('🛒 Your cart is empty! Add some items first.');
         return;
     }
-
-    // ...continue with the rest of your original checkout function...
-}
 
     var name = document.getElementById('customerName').value;
     var countryCodeElement = document.getElementById('countryCode');
@@ -1351,12 +1187,8 @@ function showVerificationPopup(name, phone, address, payment) {
             '<h2 style="color:#2c3e50;margin-bottom:5px;font-size:1.3em;">Verify Your Number</h2>' +
             '<p style="color:#7f8c8d;font-size:0.88em;margin-bottom:15px;">Choose how to receive your code:</p>' +
             '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:15px;flex-wrap:wrap;">' +
-                '<button onclick="sendViaWhatsApp()" style="background:#25D366;color:white;border:none;padding:12px 22px;border-radius:30px;cursor:pointer;font-weight:600;font-size:0.95em;flex:1 1 auto;min-width:130px;">' +
-                    '<i class="fab fa-whatsapp"></i> WhatsApp' +
-                '</button>' +
-                '<button onclick="sendViaSMS()" style="background:#3498db;color:white;border:none;padding:12px 22px;border-radius:30px;cursor:pointer;font-weight:600;font-size:0.95em;flex:1 1 auto;min-width:130px;">' +
-                    '<i class="fas fa-sms"></i> SMS' +
-                '</button>' +
+                '<button onclick="sendViaWhatsApp()" style="background:#25D366;color:white;border:none;padding:12px 22px;border-radius:30px;cursor:pointer;font-weight:600;font-size:0.95em;flex:1 1 auto;min-width:130px;"><i class="fab fa-whatsapp"></i> WhatsApp</button>' +
+                '<button onclick="sendViaSMS()" style="background:#3498db;color:white;border:none;padding:12px 22px;border-radius:30px;cursor:pointer;font-weight:600;font-size:0.95em;flex:1 1 auto;min-width:130px;"><i class="fas fa-sms"></i> SMS</button>' +
             '</div>' +
             '<div id="deliveryStatus" style="font-size:0.85em;min-height:22px;margin-bottom:12px;color:#7f8c8d;"></div>' +
             '<div id="otpSection" style="display:none;">' +
@@ -1402,7 +1234,6 @@ function sendViaSMS() {
     var status = document.getElementById('deliveryStatus');
     status.textContent = '📱 Sending code via SMS...';
     status.style.color = '#3498db';
-
     setTimeout(function() {
         status.textContent = '✅ Code sent via SMS! Check your messages.';
         document.getElementById('otpSection').style.display = 'block';
@@ -1418,11 +1249,9 @@ function resendCode() {
     var status = document.getElementById('otpStatus');
     status.textContent = '🔄 New code sent! Check your messages.';
     status.style.color = '#3498db';
-
     sendViaWhatsApp();
     document.getElementById('otpInput').value = '';
     document.getElementById('otpInput').focus();
-
     setTimeout(function() { status.textContent = ''; }, 3000);
 }
 
@@ -1442,10 +1271,8 @@ function verifyOTP() {
     if (parseInt(code) === window.tempCode) {
         status.textContent = '✅ Verified! Placing your order...';
         status.style.color = '#27ae60';
-
         var phone = window.tempOrderData ? window.tempOrderData.phone : '';
         if (phone) saveVerifiedPhone(phone);
-
         setTimeout(function() {
             closeVerificationPopup();
             placeOrder();
@@ -1455,7 +1282,6 @@ function verifyOTP() {
         status.style.color = '#e74c3c';
         otpInput.value = '';
         otpInput.focus();
-
         if (window.verificationAttempts >= 3) {
             status.textContent = '⚠️ Too many attempts. Click "Resend" for a new code.';
             status.style.color = '#e67e22';
@@ -1508,15 +1334,12 @@ function placeOrder() {
     orders.unshift(order);
     localStorage.setItem('nabzOrders', JSON.stringify(orders));
 
-    // Clear cart BEFORE anything else
     try {
         cart = [];
         localStorage.removeItem('nabzCart');
-        localStorage.removeItem('cart');
         renderCart();
     } catch (e) { console.warn('Cart clear:', e); }
 
-    // Send to backend
     fetch(API + '/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1538,7 +1361,6 @@ function placeOrder() {
     })
     .catch(function(error) { console.error('❌ Order error:', error); });
 
-    // Confirmation popup
     var confirmation = document.createElement('div');
     confirmation.id = 'confirmationModal';
     confirmation.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:15px;animation:fadeIn 0.4s;';
@@ -1562,7 +1384,6 @@ function placeOrder() {
     var okBtn = document.getElementById('confirmOkBtn');
     if (okBtn) okBtn.addEventListener('click', closeConfirmation);
 
-    // Email (AJAX)
     fetch('https://formsubmit.co/ajax/makemmy98@yahoo.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -1601,13 +1422,10 @@ function closeConfirmation() {
 function startTrackingOrder(orderId) {
     currentTrackingOrderId = orderId;
     localStorage.setItem('nabzTrackingOrderId', orderId);
-
     var section = document.getElementById('orderTrackingSection');
     if (section) section.style.display = 'block';
-
     var label = document.getElementById('trackingOrderId');
     if (label) label.textContent = '# ' + orderId;
-
     if (trackingInterval) clearInterval(trackingInterval);
     trackingInterval = setInterval(fetchOrderStatus, 5000);
     fetchOrderStatus();
@@ -1710,10 +1528,8 @@ function showOrderHistory() {
             alert('📋 You have no order history yet.');
             return;
         }
-
         var message = '📋 ORDER HISTORY\n';
         message += '═══════════════════════════\n\n';
-
         orders.slice(0, 10).forEach(function(order, index) {
             message += 'Order #' + (index + 1) + '\n';
             message += 'Date: ' + order.date + '\n';
@@ -1724,7 +1540,6 @@ function showOrderHistory() {
             message += 'Total: BD ' + (order.total || 0).toFixed(2) + '\n';
             message += '───────────────────────────\n\n';
         });
-
         alert(message);
         setActiveNav('orders');
     } catch (e) {
@@ -1739,13 +1554,11 @@ function showOrderHistory() {
 function initAutocomplete() {
     var input = document.getElementById('deliveryAddress');
     if (!input) return;
-
     try {
         var autocomplete = new google.maps.places.Autocomplete(input, {
             types: ['geocode', 'establishment'],
             componentRestrictions: { country: 'bh' }
         });
-
         autocomplete.addListener('place_changed', function() {
             var place = autocomplete.getPlace();
             if (place.formatted_address) {
@@ -1774,7 +1587,6 @@ loadMenuFromStorage();
 loadCart();
 renderCart();
 
-// Restore tracking from previous session
 (function restoreTracking() {
     var savedOrderId = localStorage.getItem('nabzTrackingOrderId');
     if (savedOrderId) startTrackingOrder(savedOrderId);
@@ -1786,14 +1598,13 @@ console.log('🚀 App loaded!');
 <!-- Google Places -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQJlGOj-bHTmrw88BV6jXH-ZDA3sOx4x4&libraries=places&callback=initAutocomplete" async defer></script>
 
-<!-- Service Worker -->
+<!-- Service Worker (disabled to fix cache issues) -->
 <script>
-   // Service worker temporarily disabled to fix aggressive caching issues
-// if ('serviceWorker' in navigator) {
-//     navigator.serviceWorker.register('/sw.js')
-//         .then(function() { console.log('✅ Service Worker registered!'); })
-//         .catch(function(error) { console.log('❌ Service Worker error:', error); });
-// }
+    // if ('serviceWorker' in navigator) {
+    //     navigator.serviceWorker.register('/sw.js')
+    //         .then(function() { console.log('✅ Service Worker registered!'); })
+    //         .catch(function(error) { console.log('❌ Service Worker error:', error); });
+    // }
 </script>
 
 </body>
