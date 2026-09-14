@@ -534,7 +534,12 @@
     <h1>Nabz-Tech Eats</h1>
     <p>Order your favorite food online — delivered to your door!</p>
 </div>
-
+<!-- ===== ORDER TRACKING ===== -->
+    <div id="orderTrackingSection">
+        <h2>
+            <i class="fas fa-box"></i> Track Your Order
+            <span id="trackingOrderId"></span>
+        </h2>
 <!-- ===== CUSTOMER LOGIN SECTION (hidden by default) ===== -->
 <div id="customerLoginSection">
     <!-- Login Prompt -->
@@ -621,12 +626,7 @@
         <span id="grandTotal">BD 0.500</span>
     </div>
 
-    <!-- ===== ORDER TRACKING ===== -->
-    <div id="orderTrackingSection">
-        <h2>
-            <i class="fas fa-box"></i> Track Your Order
-            <span id="trackingOrderId"></span>
-        </h2>
+    
         <div style="margin-bottom: 15px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.72em; color: #95a5a6; gap: 4px;">
                 <span>🆕 New</span>
@@ -1381,6 +1381,10 @@ function placeOrder() {
         '</div>';
 
     document.body.appendChild(confirmation);
+    // Scroll to top so tracking section is visible
+setTimeout(function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}, 500);
     var okBtn = document.getElementById('confirmOkBtn');
     if (okBtn) okBtn.addEventListener('click', closeConfirmation);
 
