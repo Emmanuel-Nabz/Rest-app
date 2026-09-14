@@ -198,33 +198,40 @@
            MENU ITEM CARD
            ============================================================ */
         .menu-item-large {
-            display: flex;
-            gap: 14px;
-            background: white;
-            border-radius: 14px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-            border: 1px solid #ecf0f1;
-            align-items: center;
-            transition: all 0.25s;
-        }
+    display: flex;
+    background: white;
+    border-radius: 14px;
+    padding: 0;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    border: 1px solid #ecf0f1;
+    overflow: hidden;
+    align-items: stretch;
+    transition: all 0.3s;
+}
         .menu-item-large:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
         .menu-item-large .item-image {
-            flex-shrink: 0;
-            width: 130px;
-            height: 130px;
-            border-radius: 12px;
-            object-fit: cover;
-            background: #ecf0f1;
-        }
-        .menu-item-large .item-details {
-            flex: 1;
-            min-width: 0;
-        }
+    flex-shrink: 0;
+    width: 110px;
+    height: auto;
+    align-self: stretch;
+    object-fit: cover;
+    border-radius: 13px 0 0 13px;
+    background: #ecf0f1;
+    display: block;
+}
+       .menu-item-large .item-details {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
         .menu-item-large .item-details h3 {
             font-size: 1em;
             font-weight: 700;
