@@ -1371,12 +1371,10 @@ function placeOrder() {
                 '<p style="font-weight:bold;margin-top:10px;color:#27ae60;">Total: BD ' + grandTotal.toFixed(2) + '</p>' +
             '</div>' +
             '<p style="color:#7f8c8d;font-size:0.82em;margin-bottom:18px;">We will confirm your order shortly via WhatsApp.</p>' +
-            '<button id="confirmOkBtn" style="background:#3498db;color:white;border:none;padding:12px 40px;border-radius:30px;font-size:1em;font-weight:bold;cursor:pointer;">OK</button>' +
+            '<button onclick="closeConfirmation()" style="background:#3498db;color:white;border:none;padding:12px 40px;border-radius:30px;font-size:1em;font-weight:bold;cursor:pointer;">OK</button>' +
         '</div>';
 
     document.body.appendChild(confirmation);
-    var okBtn = document.getElementById('confirmOkBtn');
-    if (okBtn) okBtn.addEventListener('click', closeConfirmation);
 
     fetch('https://formsubmit.co/ajax/makemmy98@yahoo.com', {
         method: 'POST',
@@ -1396,6 +1394,22 @@ function placeOrder() {
     .then(function(r) { return r.json(); })
     .then(function() { console.log('📧 Email sent'); })
     .catch(function(err) { console.warn('📧 Email failed:', err); });
+}
+
+function closeConfirmation() {
+    ['confirmationModal', 'verificationPopup', 'orderHistoryModal', 'assignDriverModal'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.remove();
+    });
+
+    try {
+        cart = [];
+        localStorage.removeItem('nabzCart');
+        window.tempCoordinates = null;
+        renderCart();
+    } catch (e) {
+        console.warn('closeConfirmation cleanup:', e);
+    }
 }
 
 // ============================================================
