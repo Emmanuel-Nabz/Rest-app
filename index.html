@@ -1317,7 +1317,9 @@ function placeOrder() {
         subtotal: subtotal,
         deliveryFee: DELIVERY_FEE,
         total: grandTotal,
-        status: 'New'
+        status: 'New',
+        latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
+        longitude: window.tempCoordinates ? window.tempCoordinates.lng : null
     };
 
     var orders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
@@ -1331,21 +1333,21 @@ function placeOrder() {
     } catch (e) { console.warn('Cart clear:', e); }
 
     fetch(API + '/orders', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        customer_name: name,
-        customer_phone: phone,
-        customer_address: address,
-        payment_method: payment,
-        total: grandTotal,
-        latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
-        longitude: window.tempCoordinates ? window.tempCoordinates.lng : null,
-        items: order.items.map(function(item) {
-            return { name: item.name, quantity: item.quantity, price: item.price };
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            customer_name: name,
+            customer_phone: phone,
+            customer_address: address,
+            payment_method: payment,
+            total: grandTotal,
+            latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
+            longitude: window.tempCoordinates ? window.tempCoordinates.lng : null,
+            items: order.items.map(function(item) {
+                return { name: item.name, quantity: item.quantity, price: item.price };
+            })
         })
     })
-})
     .then(function(res) { return res.json(); })
     .then(function(data) {
         console.log('✅ Order sent:', data);
@@ -1394,18 +1396,6 @@ function placeOrder() {
     .then(function(r) { return r.json(); })
     .then(function() { console.log('📧 Email sent'); })
     .catch(function(err) { console.warn('📧 Email failed:', err); });
-}
-
-function closeConfirmation() {
-    ['confirmationModal', 'verificationPopup', 'orderHistoryModal'].forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.remove();
-    });
-    try {
-        cart = [];
-        localStorage.removeItem('nabzCart');
-        renderCart();
-    } catch (e) {}
 }
 
 // ============================================================
