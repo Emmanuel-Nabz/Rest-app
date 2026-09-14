@@ -1331,19 +1331,21 @@ function placeOrder() {
     } catch (e) { console.warn('Cart clear:', e); }
 
     fetch(API + '/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            customer_name: name,
-            customer_phone: phone,
-            customer_address: address,
-            payment_method: payment,
-            total: grandTotal,
-            items: order.items.map(function(item) {
-                return { name: item.name, quantity: item.quantity, price: item.price };
-            })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        customer_name: name,
+        customer_phone: phone,
+        customer_address: address,
+        payment_method: payment,
+        total: grandTotal,
+        latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
+        longitude: window.tempCoordinates ? window.tempCoordinates.lng : null,
+        items: order.items.map(function(item) {
+            return { name: item.name, quantity: item.quantity, price: item.price };
         })
     })
+})
     .then(function(res) { return res.json(); })
     .then(function(data) {
         console.log('✅ Order sent:', data);
