@@ -535,11 +535,30 @@
     <p>Order your favorite food online — delivered to your door!</p>
 </div>
 <!-- ===== ORDER TRACKING ===== -->
-    <div id="orderTrackingSection">
-        <h2>
-            <i class="fas fa-box"></i> Track Your Order
-            <span id="trackingOrderId"></span>
-        </h2>
+<div id="orderTrackingSection">
+    <h2>
+        <i class="fas fa-box"></i> Track Your Order
+        <span id="trackingOrderId"></span>
+    </h2>
+    <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.72em; color: #95a5a6; gap: 4px;">
+            <span>🆕 New</span>
+            <span>✅ Confirmed</span>
+            <span>👨‍🍳 Preparing</span>
+            <span>🛵 On the Way</span>
+            <span>🎉 Delivered</span>
+        </div>
+        <div style="height: 8px; background: #ecf0f1; border-radius: 10px; overflow: hidden;">
+            <div id="statusBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3498db, #27ae60); transition: width 0.6s ease;"></div>
+        </div>
+    </div>
+    <div id="statusMessage" style="text-align: center; padding: 15px; border-radius: 10px; font-weight: 600; font-size: 0.95em; background: #ecf0f1; color: #2c3e50;">
+        Loading status...
+    </div>
+</div>
+
+<!-- ===== CUSTOMER LOGIN SECTION (hidden by default) ===== -->
+<div id="customerLoginSection">
 <!-- ===== CUSTOMER LOGIN SECTION (hidden by default) ===== -->
 <div id="customerLoginSection">
     <!-- Login Prompt -->
@@ -627,22 +646,7 @@
     </div>
 
     
-        <div style="margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.72em; color: #95a5a6; gap: 4px;">
-                <span>🆕 New</span>
-                <span>✅ Confirmed</span>
-                <span>👨‍🍳 Preparing</span>
-                <span>🛵 On the Way</span>
-                <span>🎉 Delivered</span>
-            </div>
-            <div style="height: 8px; background: #ecf0f1; border-radius: 10px; overflow: hidden;">
-                <div id="statusBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3498db, #27ae60); transition: width 0.6s ease;"></div>
-            </div>
-        </div>
-        <div id="statusMessage" style="text-align: center; padding: 15px; border-radius: 10px; font-weight: 600; font-size: 0.95em; background: #ecf0f1; color: #2c3e50;">
-            Loading status...
-        </div>
-    </div>
+      
 
     <!-- ===== CONTACT DETAILS ===== -->
     <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #c5c5c5;" id="contactSection">
