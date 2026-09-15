@@ -804,7 +804,7 @@ function renderCart() {
         var itemTotal = item.price * item.quantity;
         subtotal += itemTotal;
         html += '<div class="cart-item">' +
-            '<span class="item-name">' + item.name + '</span>' +
+           '<span class="item-name">' + escapeHtml(item.name) + '</span>' +
             '<div style="display: flex; align-items: center; gap: 8px;">' +
                 '<button class="qty-btn minus-btn" onclick="updateCartQuantity(' + item.id + ', -1)">−</button>' +
                 '<span class="qty-display">' + item.quantity + '</span>' +
@@ -920,8 +920,8 @@ function renderMenu() {
         div.innerHTML =
             '<img src="' + (item.image || 'https://via.placeholder.com/100') + '" alt="' + item.name + '" class="item-image" onerror="this.src=\'https://via.placeholder.com/100?text=🍽️\'">' +
             '<div class="item-details">' +
-                '<h3>' + catIcon + ' ' + item.name + '</h3>' +
-                '<div class="desc">' + item.desc + '</div>' +
+                '<h3>' + escapeHtml(catIcon + ' ' + item.name) + '</h3>' +
+'<div class="desc">' + escapeHtml(item.desc) + '</div>' +
                 '<div class="price-row">' +
                     '<div class="price">BD ' + item.price.toFixed(2) + '</div>' +
                     '<div class="item-actions">' +
