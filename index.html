@@ -1429,9 +1429,27 @@ function startTrackingOrder(orderId) {
 
 function fetchOrderStatus() {
     if (!currentTrackingOrderId) return;
+
     fetch(API + '/orders/' + currentTrackingOrderId + '/status')
         .then(function(res) { return res.json(); })
-        .then(function(data) { updateTrackingUI(data.status); })
+        .then(function(data) {
+            updateTrackingUI(data.status);
+
+            // If On the Way, also fetch the ETA
+            if (data.status === 'On the Way') {
+                fetch(API + '/orders/' + currentTrackingOrderId + '/eta')
+                    .then(function(r) { return r.json(); })
+                    .then(function(eta) {
+                        var msg = document.getElementById('statusMessage');
+                        if (msg && eta.eta_minutes) {
+                            msg.innerHTML = '🛵 Your driver is <strong>' + eta.eta_minutes + ' min</strong> away';
+                        } else if (msg) {
+                            msg.innerHTML = '🛵 Your order is on the way!';
+                        }
+                    })
+                    .catch(function() {});
+            }
+        })
         .catch(function(error) { console.log('Tracking error:', error); });
 }
 
