@@ -1148,159 +1148,101 @@ function checkout() {
         return;
     }
 
-    var name = document.getElementById('customerName').value;
+    var name = document.getElementById('customerName').value.trim();
     var countryCodeElement = document.getElementById('countryCode');
     var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
-    var phoneNumber = document.getElementById('customerPhone').value;
+    var phoneNumber = document.getElementById('customerPhone').value.trim();
     var phone = countryCode + phoneNumber;
-    var address = document.getElementById('deliveryAddress').value;
+    var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
 
     if (!name) { alert('👤 Please enter your full name.'); return; }
     if (!phoneNumber) { alert('📱 Please enter your phone number.'); return; }
     if (!address) { alert('📍 Please enter your delivery address.'); return; }
 
-    if (isPhoneVerified(phone)) {
-        if (confirm('✅ Your phone number ' + phone + ' is already verified.\n\nPlace order now?')) {
-            window.tempOrderData = { name, phone, address, payment };
-            placeOrder();
-        }
-        return;
-    }
-
-    showVerificationPopup(name, phone, address, payment);
+    // Show the confirmation popup
+    showPhoneConfirmation(name, phone, address, payment);
 }
 
-function showVerificationPopup(name, phone, address, payment) {
-    var verificationCode = Math.floor(1000 + Math.random() * 9000);
-    window.tempCode = verificationCode;
-    window.tempOrderData = { name, phone, address, payment };
-    window.verificationAttempts = 0;
+// ============================================================
+// PHONE CONFIRMATION (replaces the old OTP flow)
+// ============================================================
+function showPhoneConfirmation(name, phone, address, payment) {
+    var overlay = document.createElement('div');
+    overlay.id = 'phoneConfirmModal';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:9999;padding:15px;animation:fadeIn 0.3s;';
 
-    var popup = document.createElement('div');
-    popup.id = 'verificationPopup';
-    popup.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000;animation:fadeIn 0.3s;padding:15px;';
+    overlay.innerHTML =
+        '<div style="background:white;border-radius:20px;padding:32px 26px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:bounceIn 0.4s;position:relative;">' +
 
-    popup.innerHTML =
-        '<div style="background:white;border-radius:20px;padding:28px 22px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:bounceIn 0.4s;position:relative;">' +
-            '<button onclick="closeVerificationPopup()" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.5em;color:#95a5a6;cursor:pointer;">×</button>' +
-            '<div style="font-size:2.8em;margin-bottom:8px;">📱</div>' +
-            '<h2 style="color:#2c3e50;margin-bottom:5px;font-size:1.3em;">Verify Your Number</h2>' +
-            '<p style="color:#7f8c8d;font-size:0.88em;margin-bottom:15px;">Choose how to receive your code:</p>' +
-            '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:15px;flex-wrap:wrap;">' +
-                '<button onclick="sendViaWhatsApp()" style="background:#25D366;color:white;border:none;padding:12px 22px;border-radius:30px;cursor:pointer;font-weight:600;font-size:0.95em;flex:1 1 auto;min-width:130px;"><i class="fab fa-whatsapp"></i> WhatsApp</button>' +
-                '<button onclick="sendViaSMS()" style="background:#3498db;color:white;border:none;padding:12px 22px;border-radius:30px;cursor:pointer;font-weight:600;font-size:0.95em;flex:1 1 auto;min-width:130px;"><i class="fas fa-sms"></i> SMS</button>' +
+            '<div style="font-size:3em;margin-bottom:12px;">📱</div>' +
+            '<h2 style="color:#2c3e50;margin-bottom:10px;font-size:1.3em;font-weight:700;">Confirm Your Number</h2>' +
+            '<p style="color:#7f8c8d;font-size:0.9em;line-height:1.5;margin-bottom:20px;">' +
+                'We will call you on this number<br>when the driver is nearby.' +
+            '</p>' +
+
+            '<div style="background:#f8f9fa;border:2px dashed #3498db;border-radius:12px;padding:16px;margin-bottom:22px;">' +
+                '<div style="color:#7f8c8d;font-size:0.75em;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Phone Number</div>' +
+                '<div style="font-size:1.35em;font-weight:700;color:#2c3e50;word-break:break-all;" id="confirmPhoneDisplay">' + escapeHtml(phone) + '</div>' +
             '</div>' +
-            '<div id="deliveryStatus" style="font-size:0.85em;min-height:22px;margin-bottom:12px;color:#7f8c8d;"></div>' +
-            '<div id="otpSection" style="display:none;">' +
-                '<p style="color:#7f8c8d;font-size:0.9em;margin-bottom:12px;">We sent a code to <strong>' + phone + '</strong></p>' +
-                '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:12px;">' +
-                    '<input type="text" id="otpInput" maxlength="4" inputmode="numeric" placeholder="0000" style="width:150px;padding:14px;font-size:1.4em;text-align:center;border:2px solid #ddd;border-radius:10px;letter-spacing:6px;font-weight:bold;">' +
-                '</div>' +
-                '<div id="otpStatus" style="font-size:0.85em;min-height:22px;margin-bottom:10px;"></div>' +
-                '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">' +
-                    '<button onclick="verifyOTP()" style="background:#27ae60;color:white;border:none;padding:12px 26px;border-radius:30px;font-size:0.95em;font-weight:bold;cursor:pointer;">✅ Verify</button>' +
-                    '<button onclick="resendCode()" style="background:#3498db;color:white;border:none;padding:12px 22px;border-radius:30px;font-size:0.95em;font-weight:bold;cursor:pointer;">🔄 Resend</button>' +
-                '</div>' +
+
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+                '<button onclick="editPhoneNumber()" style="padding:14px;background:#ecf0f1;color:#2c3e50;border:none;border-radius:12px;font-weight:600;font-size:0.95em;cursor:pointer;">' +
+                    '✏️ Edit' +
+                '</button>' +
+                '<button onclick="confirmPhoneAndOrder()" style="padding:14px;background:#27ae60;color:white;border:none;border-radius:12px;font-weight:600;font-size:0.95em;cursor:pointer;">' +
+                    '✅ Yes, Place Order' +
+                '</button>' +
             '</div>' +
+
         '</div>';
 
-    document.body.appendChild(popup);
+    document.body.appendChild(overlay);
 }
 
-function closeVerificationPopup() {
-    var popup = document.getElementById('verificationPopup');
-    if (popup) popup.remove();
-}
+function editPhoneNumber() {
+    // Close the modal and focus on the phone field
+    closePhoneConfirm();
+    var phoneField = document.getElementById('customerPhone');
+    if (phoneField) {
+        phoneField.focus();
+        phoneField.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-function sendViaWhatsApp() {
-    var status = document.getElementById('deliveryStatus');
-    var phone = window.tempOrderData ? window.tempOrderData.phone : '';
-    status.textContent = '📱 Sending code via WhatsApp...';
-    status.style.color = '#25D366';
-
-    var message = '🔐 Your Nabz-Tech Eats verification code: ' + window.tempCode;
-    var url = 'https://wa.me/' + phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent(message);
-    window.open(url, '_blank');
-
-    status.textContent = '✅ Code sent via WhatsApp! Check your messages.';
-    document.getElementById('otpSection').style.display = 'block';
-    setTimeout(function() {
-        var otpInput = document.getElementById('otpInput');
-        if (otpInput) otpInput.focus();
-    }, 500);
-}
-
-function sendViaSMS() {
-    var status = document.getElementById('deliveryStatus');
-    status.textContent = '📱 Sending code via SMS...';
-    status.style.color = '#3498db';
-    setTimeout(function() {
-        status.textContent = '✅ Code sent via SMS! Check your messages.';
-        document.getElementById('otpSection').style.display = 'block';
+        // Briefly highlight the field
+        phoneField.style.transition = 'box-shadow 0.3s';
+        phoneField.style.boxShadow = '0 0 0 4px rgba(52, 152, 219, 0.4)';
         setTimeout(function() {
-            var otpInput = document.getElementById('otpInput');
-            if (otpInput) otpInput.focus();
-        }, 500);
-    }, 1500);
+            phoneField.style.boxShadow = '';
+        }, 1500);
+    }
 }
 
-function resendCode() {
-    window.tempCode = Math.floor(1000 + Math.random() * 9000);
-    var status = document.getElementById('otpStatus');
-    status.textContent = '🔄 New code sent! Check your messages.';
-    status.style.color = '#3498db';
-    sendViaWhatsApp();
-    document.getElementById('otpInput').value = '';
-    document.getElementById('otpInput').focus();
-    setTimeout(function() { status.textContent = ''; }, 3000);
+function closePhoneConfirm() {
+    var el = document.getElementById('phoneConfirmModal');
+    if (el) el.remove();
 }
 
-function verifyOTP() {
-    var otpInput = document.getElementById('otpInput');
-    var status = document.getElementById('otpStatus');
-    var code = otpInput.value.trim();
+function confirmPhoneAndOrder() {
+    // Gather all the order data fresh from the form
+    var name = document.getElementById('customerName').value.trim();
+    var countryCodeElement = document.getElementById('countryCode');
+    var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
+    var phoneNumber = document.getElementById('customerPhone').value.trim();
+    var phone = countryCode + phoneNumber;
+    var address = document.getElementById('deliveryAddress').value.trim();
+    var payment = document.getElementById('paymentMethod').value;
 
-    if (!code || code.length < 4) {
-        status.textContent = '⚠️ Please enter the 4-digit code.';
-        status.style.color = '#e74c3c';
+    // Validate once more
+    if (!name || !phoneNumber || !address) {
+        alert('Something is missing. Please check your details.');
+        closePhoneConfirm();
         return;
     }
 
-    window.verificationAttempts = (window.verificationAttempts || 0) + 1;
-
-    if (parseInt(code) === window.tempCode) {
-        status.textContent = '✅ Verified! Placing your order...';
-        status.style.color = '#27ae60';
-        var phone = window.tempOrderData ? window.tempOrderData.phone : '';
-        if (phone) saveVerifiedPhone(phone);
-        setTimeout(function() {
-            closeVerificationPopup();
-            placeOrder();
-        }, 1000);
-    } else {
-        status.textContent = '❌ Invalid code. Please try again.';
-        status.style.color = '#e74c3c';
-        otpInput.value = '';
-        otpInput.focus();
-        if (window.verificationAttempts >= 3) {
-            status.textContent = '⚠️ Too many attempts. Click "Resend" for a new code.';
-            status.style.color = '#e67e22';
-        }
-    }
-}
-
-function isPhoneVerified(phone) {
-    var verifiedPhones = JSON.parse(localStorage.getItem('verifiedPhones')) || [];
-    return verifiedPhones.includes(phone);
-}
-
-function saveVerifiedPhone(phone) {
-    var verifiedPhones = JSON.parse(localStorage.getItem('verifiedPhones')) || [];
-    if (!verifiedPhones.includes(phone)) {
-        verifiedPhones.push(phone);
-        localStorage.setItem('verifiedPhones', JSON.stringify(verifiedPhones));
-    }
+    // Close the confirmation and place the order
+    closePhoneConfirm();
+    window.tempOrderData = { name: name, phone: phone, address: address, payment: payment };
+    placeOrder();
 }
 
 // ============================================================
@@ -1408,7 +1350,7 @@ function placeOrder() {
 }
 
 function closeConfirmation() {
-    ['confirmationModal', 'verificationPopup', 'orderHistoryModal', 'assignDriverModal'].forEach(function(id) {
+    ['confirmationModal', 'verificationPopup', 'orderHistoryModal', 'assignDriverModal', 'phoneConfirmModal'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.remove();
     });
@@ -1422,7 +1364,6 @@ function closeConfirmation() {
         console.warn('closeConfirmation cleanup:', e);
     }
 }
-
 // ============================================================
 // ORDER TRACKING
 // ============================================================
