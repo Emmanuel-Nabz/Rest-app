@@ -507,12 +507,44 @@
 
         .no-items { text-align: center; color: #95a5a6; padding: 40px 0; font-size: 1em; }
 
+/* ===== FLOATING CART BAR ===== */
+#floatingCart {
+    display: none;
+    position: fixed;
+    bottom: 78px;
+    left: 10px;
+    right: 10px;
+    background: #e67e22;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 30px;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 25px rgba(230,126,34,0.5);
+    z-index: 998;
+    max-width: 600px;
+    margin: 0 auto;
+    cursor: pointer;
+    font-size: 0.95em;
+    animation: bounceIn 0.3s ease;
+}
+#floatingCart:hover { background: #d35400; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
         @keyframes bounceIn {
             0% { transform: scale(0.85); opacity: 0; }
             70% { transform: scale(1.02); }
             100% { transform: scale(1); opacity: 1; }
+            
         }
+        @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
     </style>
 </head>
 <body>
@@ -718,6 +750,11 @@
         Loading status...
     </div>
 </div>
+<!-- ===== FLOATING CART BAR ===== -->
+<div id="floatingCart" onclick="scrollToCart()">
+    <span><strong id="floatingCartCount">0</strong> items · BD <span id="floatingCartTotal">0.00</span></span>
+    <span style="font-weight:700;">View Cart →</span>
+</div>
 
 <!-- ===== BOTTOM NAVIGATION ===== -->
 <div class="bottom-nav">
@@ -797,9 +834,23 @@ function renderCart() {
     for (var i = 0; i < cart.length; i++) totalItems += cart[i].quantity;
     badge.textContent = totalItems;
 
-    if (navBadge) {
+        if (navBadge) {
         navBadge.textContent = totalItems;
         navBadge.classList.toggle('show', totalItems > 0);
+    }
+
+    // Update floating cart bar
+    var floatingCart = document.getElementById('floatingCart');
+    if (floatingCart) {
+        if (totalItems > 0) {
+            floatingCart.style.display = 'flex';
+            document.getElementById('floatingCartCount').textContent = totalItems;
+            var subtotalValue = 0;
+            cart.forEach(function(i) { subtotalValue += i.price * i.quantity; });
+            document.getElementById('floatingCartTotal').textContent = (subtotalValue + DELIVERY_FEE).toFixed(2);
+        } else {
+            floatingCart.style.display = 'none';
+        }
     }
 
     if (cart.length === 0) {
@@ -975,8 +1026,56 @@ function updateQuantity(id, change) {
     if (minusBtn) {
         minusBtn.style.display = newQuantity > 0 ? 'inline-flex' : 'none';
     }
-    saveCart();
+        saveCart();
     renderCart();
+
+    // Upsell logic — suggest a drink when adding a main item
+    if (change > 0 && newQuantity === 1) {
+        var itemCategory = null;
+        menuCategories.forEach(function(cat) {
+            if (cat.items.some(function(i) { return i.id === id; })) itemCategory = cat.name;
+        });
+
+        if (itemCategory && ['Burgers', 'Pizzas', 'Wraps'].indexOf(itemCategory) !== -1) {
+            var drinksCat = menuCategories.find(function(c) { return c.name === 'Drinks' || c.name === 'Desserts'; });
+            if (drinksCat && drinksCat.items.length > 0) {
+                var alreadyHasDrink = cart.some(function(c) {
+                    return drinksCat.items.some(function(d) { return d.id === c.id; });
+                });
+                if (!alreadyHasDrink) {
+                    var suggestion = drinksCat.items[Math.floor(Math.random() * drinksCat.items.length)];
+                    setTimeout(function() { showUpsell(suggestion); }, 600);
+                }
+            }
+        }
+    }
+}
+
+function showUpsell(item) {
+    var existing = document.getElementById('upsellBanner');
+    if (existing) existing.remove();
+
+    var banner = document.createElement('div');
+    banner.id = 'upsellBanner';
+    banner.style.cssText = 'position:fixed;bottom:135px;left:10px;right:10px;background:white;border-radius:14px;padding:12px 16px;box-shadow:0 10px 30px rgba(0,0,0,0.25);z-index:997;display:flex;align-items:center;gap:12px;max-width:600px;margin:0 auto;animation:bounceIn 0.3s ease;border:2px solid #27ae60;';
+    banner.innerHTML =
+        '<div style="font-size:2em;flex-shrink:0;">🥤</div>' +
+        '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:700;color:#2c3e50;font-size:0.9em;margin-bottom:2px;">Add a ' + escapeHtml(item.name) + '?</div>' +
+            '<div style="color:#7f8c8d;font-size:0.78em;">Just BD ' + item.price.toFixed(2) + '</div>' +
+        '</div>' +
+        '<button onclick="addUpsellItem(' + item.id + ')" style="background:#27ae60;color:white;border:none;padding:8px 16px;border-radius:20px;font-weight:600;cursor:pointer;font-size:0.85em;flex-shrink:0;">Add</button>' +
+        '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:#95a5a6;font-size:1.3em;cursor:pointer;padding:0 4px;flex-shrink:0;line-height:1;">×</button>';
+
+    document.body.appendChild(banner);
+    setTimeout(function() { if (banner.parentNode) banner.remove(); }, 9000);
+}
+
+function addUpsellItem(id) {
+    var el = document.getElementById('upsellBanner');
+    if (el) el.remove();
+    updateQuantity(id, 1);
+    showToast('Added to cart ✅');
 }
 
 function updateCartQuantity(id, change) {
@@ -1504,30 +1603,79 @@ function setActiveNav(activeId) {
 // ORDER HISTORY
 // ============================================================
 function showOrderHistory() {
-    try {
-        var orders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
-        if (orders.length === 0) {
-            alert('📋 You have no order history yet.');
-            return;
-        }
-        var message = '📋 ORDER HISTORY\n';
-        message += '═══════════════════════════\n\n';
-        orders.slice(0, 10).forEach(function(order, index) {
-            message += 'Order #' + (index + 1) + '\n';
-            message += 'Date: ' + order.date + '\n';
-            message += 'Status: ' + order.status + '\n';
-            (order.items || []).forEach(function(item) {
-                message += '  ' + item.quantity + 'x ' + item.name + '\n';
-            });
-            message += 'Total: BD ' + (order.total || 0).toFixed(2) + '\n';
-            message += '───────────────────────────\n\n';
-        });
-        alert(message);
-        setActiveNav('orders');
-    } catch (e) {
-        alert('📋 Error loading orders. Please try again.');
-        console.log('Order history error:', e);
+    var orders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
+
+    if (orders.length === 0) {
+        showToast('📋 No orders yet — place your first order!');
+        return;
     }
+
+    var overlay = document.createElement('div');
+    overlay.id = 'orderHistoryModal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;justify-content:center;z-index:9999;';
+
+    var html = '<div style="background:white;border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;animation:slideUp 0.3s ease;">' +
+        '<div style="padding:20px;border-bottom:1px solid #ecf0f1;display:flex;justify-content:space-between;align-items:center;">' +
+            '<h2 style="margin:0;font-size:1.2em;color:#2c3e50;">📋 Your Orders</h2>' +
+            '<button onclick="document.getElementById(\'orderHistoryModal\').remove()" style="background:none;border:none;font-size:1.5em;color:#95a5a6;cursor:pointer;">×</button>' +
+        '</div>' +
+        '<div style="overflow-y:auto;padding:15px;">';
+
+    orders.slice(0, 20).forEach(function(order) {
+        var date = order.date || 'Unknown date';
+        var total = (order.total || 0).toFixed(2);
+        var statusColor = {
+            'New': '#3498db', 'Confirmed': '#27ae60', 'Preparing': '#f39c12',
+            'On the Way': '#9b59b6', 'Delivered': '#2ecc71', 'Cancelled': '#e74c3c'
+        }[order.status] || '#7f8c8d';
+
+        html += '<div style="background:#f8f9fa;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid ' + statusColor + ';">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+                '<strong style="color:#2c3e50;">Order #' + (order.id || '—') + '</strong>' +
+                '<span style="background:' + statusColor + '20;color:' + statusColor + ';padding:3px 10px;border-radius:10px;font-size:0.75em;font-weight:600;">' + (order.status || 'New') + '</span>' +
+            '</div>' +
+            '<div style="font-size:0.8em;color:#7f8c8d;margin-bottom:8px;">' + date + '</div>' +
+            '<div style="font-size:0.85em;color:#555;margin-bottom:6px;">' +
+                (order.items || []).slice(0, 3).map(function(i) {
+                    return i.quantity + '× ' + i.name;
+                }).join(' · ') +
+                ((order.items || []).length > 3 ? ' +' + (order.items.length - 3) + ' more' : '') +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+                '<strong style="color:#27ae60;">BD ' + total + '</strong>' +
+                (order.status === 'Delivered' ? '<button onclick="reorder(' + JSON.stringify(order).replace(/"/g, '&quot;') + ')" style="background:#3498db;color:white;border:none;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;cursor:pointer;">🔁 Reorder</button>' : '') +
+            '</div>' +
+        '</div>';
+    });
+
+    html += '</div></div>';
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+}
+
+function reorder(orderJson) {
+    if (!confirm('Add these items to your cart again?')) return;
+    orderJson.items.forEach(function(item) {
+        var existing = cart.find(function(c) { return c.id === item.id; });
+        if (existing) {
+            existing.quantity += item.quantity;
+        } else {
+            cart.push({ id: item.id, name: item.name, price: item.price, quantity: item.quantity });
+        }
+    });
+    saveCart();
+    renderCart();
+    document.getElementById('orderHistoryModal').remove();
+    showToast('✅ Items added to cart');
+    scrollToCart();
+}
+
+function showToast(msg) {
+    var t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#2c3e50;color:white;padding:12px 20px;border-radius:24px;font-weight:600;z-index:99999;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 2500);
 }
 
 // ============================================================
