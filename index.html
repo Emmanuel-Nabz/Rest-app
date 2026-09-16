@@ -930,8 +930,6 @@ function clearCart() {
 
 function renderCart() {
     var cartContainer = document.getElementById('cartItems');
-    var subtotalSpan = document.getElementById('subtotal');
-    var grandTotalSpan = document.getElementById('grandTotal');
     var badge = document.getElementById('cartBadge');
     var navBadge = document.getElementById('navCartBadge');
 
@@ -960,8 +958,26 @@ function renderCart() {
 
     if (cart.length === 0) {
         cartContainer.innerHTML = '<div class="empty-cart">🛒 Your cart is empty</div>';
-        subtotalSpan.textContent = 'BD 0.00';
-        grandTotalSpan.textContent = 'BD ' + DELIVERY_FEE.toFixed(2);
+        // Rebuild summary with zero state
+        var summaryCardEmpty = document.getElementById('summaryCard');
+        if (summaryCardEmpty) {
+            summaryCardEmpty.innerHTML =
+                '<div class="checkout-card-header summary">' +
+                    '<i class="fas fa-receipt"></i> Order Summary' +
+                '</div>' +
+                '<div class="summary-row">' +
+                    '<span class="label"><i class="fas fa-box"></i> Subtotal</span>' +
+                    '<span>BD 0.00</span>' +
+                '</div>' +
+                '<div class="summary-row">' +
+                    '<span class="label"><i class="fas fa-truck"></i> Delivery Fee</span>' +
+                    '<span>BD ' + DELIVERY_FEE.toFixed(2) + '</span>' +
+                '</div>' +
+                '<div class="summary-row total">' +
+                    '<span class="label"><i class="fas fa-money-bill-wave"></i> Total</span>' +
+                    '<span>BD ' + DELIVERY_FEE.toFixed(2) + '</span>' +
+                '</div>';
+        }
         updateCheckoutButton(0);
         return;
     }
@@ -1012,10 +1028,7 @@ function renderCart() {
             '</div>';
     }
 
-    var grandTotal = subtotal + deliveryFee;
-    subtotalSpan.textContent = 'BD ' + subtotal.toFixed(2);
-    grandTotalSpan.textContent = 'BD ' + grandTotal.toFixed(2);
-
+    // Summary card already has the totals rendered above
     updateCheckoutButton(subtotal);
 }
 
@@ -1968,9 +1981,6 @@ function repeatLastOrder() {
 }
 
 // ============================================================
-// BOOT
-// ============================================================
-// ============================================================
 // FIRST ORDER — FREE DELIVERY (server-checked)
 // ============================================================
 function checkFirstOrderStatus() {
@@ -2031,8 +2041,6 @@ loadMenuFromStorage();
 loadCart();
 renderCart();
 checkFirstOrderStatus();
-updateCheckoutButton(0);
-updateCheckoutButton(0);
 
 (function restoreTracking() {
     var savedOrderId = localStorage.getItem('nabzTrackingOrderId');
