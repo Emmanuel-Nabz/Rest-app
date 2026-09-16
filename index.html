@@ -278,14 +278,11 @@
         }
 
         /* ===== CART ===== */
-        .cart-section {
-            background: #e4e4e9;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border-top: 4px solid #e67e22;
-            margin-top: 30px;
-        }
+       .cart-section {
+    background: transparent;
+    padding: 0;
+    margin-top: 30px;
+}
         .cart-section h2 {
             display: flex;
             align-items: center;
@@ -314,15 +311,32 @@
             font-size: 0.75em;
             margin-left: auto;
         }
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px dashed #d0d0d0;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+       #cartItems {
+    background: white;
+    border-radius: 14px;
+    padding: 4px 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid #ecf0f1;
+}
+#cartItems:empty,
+#cartItems .empty-cart {
+    background: white;
+    padding: 24px;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e0e0e0;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cart-item:last-child {
+    border-bottom: none;
+}
         .cart-item .item-name {
             font-weight: 500;
             font-size: 0.95em;
@@ -337,6 +351,90 @@
             font-size: 0.9em;
         }
         .empty-cart { color: #95a5a6; text-align: center; padding: 20px 0; font-size: 0.95em; }
+
+/* ===== CHECKOUT CARDS ===== */
+.checkout-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid #ecf0f1;
+}
+
+.checkout-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95em;
+    font-weight: 700;
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.checkout-card-header i {
+    color: #e67e22;
+    font-size: 1.15em;
+}
+
+.checkout-card-header.summary i { color: #3498db; }
+.checkout-card-header.contact i { color: #27ae60; }
+
+/* Summary rows */
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 1em;
+    color: #555;
+}
+.summary-row .label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.summary-row .label i { color: #95a5a6; width: 18px; text-align: center; }
+.summary-row.total {
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 2px solid #27ae60;
+    font-size: 1.25em;
+    font-weight: 700;
+    color: #27ae60;
+}
+.summary-row.total .label { color: #2c3e50; }
+.summary-row.total .label i { color: #27ae60; }
+
+/* Big CTA button */
+.checkout-cta {
+    width: 100%;
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    color: white;
+    border: none;
+    padding: 18px;
+    border-radius: 30px;
+    font-size: 1.15em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    margin-top: 4px;
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.checkout-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(39, 174, 96, 0.45);
+}
+.checkout-cta:active { transform: translateY(0); }
+.checkout-cta i { font-size: 1.15em; }
         .cart-total, .delivery-row, .grand-total {
             display: flex;
             justify-content: space-between;
@@ -634,36 +732,44 @@
             <i class="fas fa-trash"></i> Clear
         </button>
     </h2>
+
+    <!-- CARD 1: Items in cart -->
     <div id="cartItems">
         <div class="empty-cart">🛒 Your cart is empty</div>
     </div>
 
-    <div class="cart-total">
-        <span>Subtotal:</span>
-        <span id="subtotal">BD 0.00</span>
-    </div>
-    <div class="delivery-row">
-        <span>🚚 Delivery Fee:</span>
-        <span id="deliveryFee">BD 0.500</span>
-    </div>
-    <div class="grand-total">
-        <span>Total:</span>
-        <span id="grandTotal">BD 0.500</span>
+    <!-- CARD 2: Order Summary -->
+    <div class="checkout-card" id="summaryCard">
+        <div class="checkout-card-header summary">
+            <i class="fas fa-receipt"></i> Order Summary
+        </div>
+        <div class="summary-row">
+            <span class="label"><i class="fas fa-box"></i> Subtotal</span>
+            <span id="subtotal">BD 0.00</span>
+        </div>
+        <div class="summary-row">
+            <span class="label"><i class="fas fa-truck"></i> Delivery Fee</span>
+            <span id="deliveryFee">BD 0.500</span>
+        </div>
+        <div class="summary-row total">
+            <span class="label"><i class="fas fa-money-bill-wave"></i> Total</span>
+            <span id="grandTotal">BD 0.500</span>
+        </div>
     </div>
 
-    <!-- ===== CONTACT DETAILS ===== -->
-    <div style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #c5c5c5;" id="contactSection">
-        <h3 style="color: #2c3e50; margin-bottom: 10px; font-size: 1.05em;">
-            <i class="fas fa-user-circle"></i> Contact Details
-        </h3>
+    <!-- CARD 3: Contact Details -->
+    <div class="checkout-card" id="contactSection">
+        <div class="checkout-card-header contact">
+            <i class="fas fa-address-card"></i> Contact Details
+        </div>
 
         <div class="form-group">
-            <label><i class="fas fa-user"></i> Full Name:</label>
+            <label><i class="fas fa-user"></i> Full Name</label>
             <input type="text" id="customerName" class="input-field" placeholder="Enter your full name">
         </div>
 
         <div class="form-group">
-            <label><i class="fas fa-phone"></i> Phone Number:</label>
+            <label><i class="fas fa-phone"></i> Phone Number</label>
             <div class="phone-row">
                 <select id="countryCode" class="input-field">
                     <option value="+973">🇧🇭 +973</option>
@@ -678,7 +784,7 @@
         </div>
 
         <div class="form-group">
-            <label><i class="fas fa-map-pin"></i> Delivery Address:</label>
+            <label><i class="fas fa-map-pin"></i> Delivery Address</label>
             <div class="address-row">
                 <input type="text" id="deliveryAddress" class="input-field" placeholder="Start typing your address...">
                 <button onclick="shareLocation()" class="location-btn">
@@ -688,8 +794,8 @@
             <div id="locationStatus" class="location-status"></div>
         </div>
 
-        <div class="form-group">
-            <label><i class="fas fa-credit-card"></i> Payment Method:</label>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label><i class="fas fa-credit-card"></i> Payment Method</label>
             <select id="paymentMethod" class="input-field">
                 <option value="Cash on Delivery">💵 Cash on Delivery</option>
                 <option value="Benefit Pay">📱 Benefit Pay</option>
@@ -698,7 +804,8 @@
         </div>
     </div>
 
-    <button class="checkout-btn" onclick="checkout()">
+    <!-- CARD 4: Place Order Button -->
+    <button class="checkout-cta" onclick="checkout()">
         <i class="fas fa-paper-plane"></i> Place Order
     </button>
 </div>
