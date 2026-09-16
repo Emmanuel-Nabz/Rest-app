@@ -1568,16 +1568,7 @@ function placeOrder() {
         longitude: window.tempCoordinates ? window.tempCoordinates.lng : null
     };
 
-    var orders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
-    orders.unshift(order);
-    localStorage.setItem('nabzOrders', JSON.stringify(orders));
-
-    try {
-        cart = [];
-        localStorage.removeItem('nabzCart');
-        renderCart();
-    } catch (e) { console.warn('Cart clear:', e); }
-
+    // Send to server FIRST
     fetch(API + '/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1594,12 +1585,91 @@ function placeOrder() {
             })
         })
     })
-    .then(function(res) { return res.json(); })
+    .then(function(res) {
+        if (!res.ok) {
+            return res.json().then(function(d) {
+                throw new Error(d.error || 'Server error');
+            });
+        }
+        return res.json();
+    })
     .then(function(data) {
         console.log('✅ Order sent:', data);
+
+        // Order was accepted by server — now commit locally
+        var orders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
+        orders.unshift(order);
+        localStorage.setItem('nabzOrders', JSON.stringify(orders));
+
+        // Clear cart
+        cart = [];
+        localStorage.removeItem('nabzCart');
+        renderCart();
+
+        // Track the order
         if (data && data.orderId) startTrackingOrder(data.orderId);
+
+        // NOW show confirmation
+        showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, grandTotal);
+
+        // Send email
+        sendOrderEmail(name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal);
     })
-    .catch(function(error) { console.error('❌ Order error:', error); });
+    .catch(function(error) {
+        console.error('❌ Order error:', error);
+        alert('❌ Sorry, we could not place your order:\n\n' + error.message + '\n\nPlease check your connection and try again.');
+    });
+}
+
+// ============================================================
+// SHOW ORDER CONFIRMATION
+// ============================================================
+function showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, grandTotal) {
+    var confirmation = document.createElement('div');
+    confirmation.id = 'confirmationModal';
+    confirmation.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:15px;animation:fadeIn 0.4s;';
+
+    confirmation.innerHTML =
+        '<div style="background:white;border-radius:20px;padding:30px 22px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:bounceIn 0.5s;">' +
+            '<div style="font-size:3.5em;margin-bottom:10px;">✅</div>' +
+            '<h2 style="color:#27ae60;margin-bottom:8px;font-size:1.4em;">Order Confirmed!</h2>' +
+            '<p style="color:#555;margin-bottom:18px;font-size:0.95em;">Thank you, <strong>' + escapeHtml(name) + '</strong>!<br>Your order has been received.</p>' +
+            '<div style="background:#f8f9fa;border-radius:10px;padding:15px;text-align:left;margin-bottom:18px;">' +
+                '<p style="font-size:0.85em;color:#7f8c8d;margin-bottom:5px;">📦 Order Summary</p>' +
+                '<p style="font-size:0.88em;color:#2c3e50;">' + orderSummary.replace(/\n/g, '<br>') + '</p>' +
+                '<p style="font-size:0.85em;color:#7f8c8d;margin-top:8px;">🚚 Delivery Fee: ' + (actualDeliveryFee === 0 ? '<span style="color:#27ae60;font-weight:700;">FREE 🎉</span>' : 'BD ' + actualDeliveryFee.toFixed(2)) + '</p>' +
+                '<p style="font-weight:bold;margin-top:10px;color:#27ae60;">Total: BD ' + grandTotal.toFixed(2) + '</p>' +
+            '</div>' +
+            '<p style="color:#7f8c8d;font-size:0.82em;margin-bottom:18px;">We will confirm your order shortly via WhatsApp.</p>' +
+            '<button onclick="closeConfirmation()" style="background:#3498db;color:white;border:none;padding:12px 40px;border-radius:30px;font-size:1em;font-weight:bold;cursor:pointer;">OK</button>' +
+        '</div>';
+
+    document.body.appendChild(confirmation);
+}
+
+// ============================================================
+// SEND ORDER EMAIL
+// ============================================================
+function sendOrderEmail(name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal) {
+    fetch('https://formsubmit.co/ajax/makemmy98@yahoo.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+            _subject: '🍕 New Order from Nabz-Tech Eats',
+            Name: name, Phone: phone, Address: address,
+            'Payment Method': payment,
+            'Order Summary': orderSummary,
+            Subtotal: 'BD ' + subtotal.toFixed(2),
+            'Delivery Fee': actualDeliveryFee === 0 ? 'FREE (first order)' : 'BD ' + actualDeliveryFee.toFixed(2),
+            'Total Amount': 'BD ' + grandTotal.toFixed(2),
+            Verified: '✅ Yes',
+            _captcha: 'false'
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { console.log('📧 Email sent'); })
+    .catch(function(err) { console.warn('📧 Email failed:', err); });
+}
 
     var confirmation = document.createElement('div');
     confirmation.id = 'confirmationModal';
@@ -1640,7 +1710,7 @@ function placeOrder() {
     .then(function(r) { return r.json(); })
     .then(function() { console.log('📧 Email sent'); })
     .catch(function(err) { console.warn('📧 Email failed:', err); });
-}
+
 
 function closeConfirmation() {
     ['confirmationModal', 'verificationPopup', 'orderHistoryModal', 'assignDriverModal', 'phoneConfirmModal'].forEach(function(id) {
@@ -2036,10 +2106,9 @@ function getDeliveryFee() {
 // ============================================================
 // BOOT
 // ============================================================
+loadCart();
 checkCustomerLogin();
 loadMenuFromStorage();
-loadCart();
-renderCart();
 checkFirstOrderStatus();
 
 (function restoreTracking() {
