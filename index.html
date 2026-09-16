@@ -1000,12 +1000,13 @@ function loadMenuFromStorage() {
                         items: []
                     };
                 }
-                categories[item.category].items.push({
+                               categories[item.category].items.push({
                     id: item.id,
                     name: item.name,
                     desc: item.description,
                     price: parseFloat(item.price),
-                    image: item.image_url || 'default.jpg'
+                    image: item.image_url || 'default.jpg',
+                    is_popular: item.is_popular === 1 || item.is_popular === '1' || item.is_popular === true
                 });
             });
 
@@ -1074,7 +1075,13 @@ function renderMenu() {
         var existing = cart.find(function(i) { return i.id === item.id; });
         var qty = existing ? existing.quantity : 0;
 
+                var popularBadge = item.is_popular
+            ? '<div style="position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#f39c12,#e67e22);color:white;padding:4px 10px;border-radius:20px;font-size:0.7em;font-weight:700;box-shadow:0 2px 8px rgba(243,156,18,0.5);z-index:2;">🔥 BEST SELLER</div>'
+            : '';
+
+        div.style.position = 'relative';
         div.innerHTML =
+            popularBadge +
             '<img src="' + (item.image || 'https://via.placeholder.com/100') + '" alt="' + item.name + '" class="item-image" onerror="this.src=\'https://via.placeholder.com/100?text=🍽️\'">' +
             '<div class="item-details">' +
                 '<h3>' + escapeHtml(catIcon + ' ' + item.name) + '</h3>' +
