@@ -877,6 +877,7 @@
 // ============================================================
 var API = 'https://api.nabztech.com/api';
 var DELIVERY_FEE = 0.500;
+var MIN_ORDER = 2.500; // minimum order subtotal (before delivery) in BD
 var currentCategory = 'All';
 var cart = [];
 var menuCategories = [];
@@ -952,6 +953,7 @@ function renderCart() {
         cartContainer.innerHTML = '<div class="empty-cart">🛒 Your cart is empty</div>';
         subtotalSpan.textContent = 'BD 0.00';
         grandTotalSpan.textContent = 'BD ' + DELIVERY_FEE.toFixed(2);
+        updateCheckoutButton(0);
         return;
     }
 
@@ -975,6 +977,34 @@ function renderCart() {
     var grandTotal = subtotal + DELIVERY_FEE;
     subtotalSpan.textContent = 'BD ' + subtotal.toFixed(2);
     grandTotalSpan.textContent = 'BD ' + grandTotal.toFixed(2);
+
+    updateCheckoutButton(subtotal);
+}
+
+function updateCheckoutButton(subtotal) {
+    var btn = document.querySelector('.checkout-cta');
+    if (!btn) return;
+
+    if (subtotal === 0) {
+        btn.disabled = true;
+        btn.style.background = '#95a5a6';
+        btn.style.cursor = 'not-allowed';
+        btn.style.boxShadow = 'none';
+        btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Cart is empty';
+    } else if (subtotal < MIN_ORDER) {
+        var remaining = (MIN_ORDER - subtotal).toFixed(2);
+        btn.disabled = true;
+        btn.style.background = '#95a5a6';
+        btn.style.cursor = 'not-allowed';
+        btn.style.boxShadow = 'none';
+        btn.innerHTML = '<i class="fas fa-info-circle"></i> Add BD ' + remaining + ' more to order';
+    } else {
+        btn.disabled = false;
+        btn.style.background = 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)';
+        btn.style.cursor = 'pointer';
+        btn.style.boxShadow = '0 6px 20px rgba(39, 174, 96, 0.35)';
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Place Order';
+    }
 }
 
 // ============================================================
@@ -1344,8 +1374,15 @@ function checkout() {
         return;
     }
 
-    if (cart.length === 0) {
+     if (cart.length === 0) {
         alert('🛒 Your cart is empty! Add some items first.');
+        return;
+    }
+
+    var currentSubtotal = 0;
+    cart.forEach(function(i) { currentSubtotal += i.price * i.quantity; });
+    if (currentSubtotal < MIN_ORDER) {
+        alert('⚠️ Minimum order is BD ' + MIN_ORDER.toFixed(2) + '.\n\nPlease add BD ' + (MIN_ORDER - currentSubtotal).toFixed(2) + ' more.');
         return;
     }
 
@@ -1895,6 +1932,8 @@ checkCustomerLogin();
 loadMenuFromStorage();
 loadCart();
 renderCart();
+updateCheckoutButton(0);
+updateCheckoutButton(0);
 
 (function restoreTracking() {
     var savedOrderId = localStorage.getItem('nabzTrackingOrderId');
