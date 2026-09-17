@@ -1573,23 +1573,65 @@ function placeOrder() {
         subtotal += itemTotal;
         orderSummary += cart[i].quantity + 'x ' + cart[i].name + ' - BD ' + itemTotal.toFixed(2) + '\n';
     }
-        var actualDeliveryFee = getDeliveryFee();
-    var grandTotal = subtotal + actualDeliveryFee;
 
-    var order = {
-        id: Date.now(),
-        date: new Date().toLocaleString(),
-        name: name, phone: phone, address: address, payment: payment,
-        items: JSON.parse(JSON.stringify(cart)),
-        subtotal: subtotal,
-        deliveryFee: actualDeliveryFee,
-        total: grandTotal,
-        status: 'New',
-        latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
-        longitude: window.tempCoordinates ? window.tempCoordinates.lng : null
-    };
+    // ⚡ Verify first-order status with the server before calculating fee
+    // This fixes the "sign up then order immediately" bug
+    fetch(API + '/customers/' + encodeURIComponent(phone) + '/first-order')
+        .then(function(res) { return res.json(); })
+        .then(function(statusData) {
+            var isFirstOrder = !!statusData.is_first_order;
+            console.log('🎁 Order-time check:', isFirstOrder);
 
-    // Send to server FIRST
+            // Update local state with the fresh server value
+            isFirstOrderServer = isFirstOrder;
+
+            var actualDeliveryFee = isFirstOrder ? 0 : DELIVERY_FEE;
+            var grandTotal = subtotal + actualDeliveryFee;
+
+            var order = {
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                name: name, phone: phone, address: address, payment: payment,
+                items: JSON.parse(JSON.stringify(cart)),
+                subtotal: subtotal,
+                deliveryFee: actualDeliveryFee,
+                total: grandTotal,
+                status: 'New',
+                latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
+                longitude: window.tempCoordinates ? window.tempCoordinates.lng : null
+            };
+
+            // Send the order to the server
+            submitOrder(order, name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal);
+
+        })
+        .catch(function(err) {
+            console.error('❌ Could not verify first-order status:', err);
+            // Fallback: use the cached state
+            var actualDeliveryFee = getDeliveryFee();
+            var grandTotal = subtotal + actualDeliveryFee;
+
+            var order = {
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                name: name, phone: phone, address: address, payment: payment,
+                items: JSON.parse(JSON.stringify(cart)),
+                subtotal: subtotal,
+                deliveryFee: actualDeliveryFee,
+                total: grandTotal,
+                status: 'New',
+                latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
+                longitude: window.tempCoordinates ? window.tempCoordinates.lng : null
+            };
+
+            submitOrder(order, name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal);
+        });
+}
+
+// ============================================================
+// SUBMIT ORDER (extracted for clarity)
+// ============================================================
+function submitOrder(order, name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal) {
     fetch(API + '/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1614,10 +1656,10 @@ function placeOrder() {
         }
         return res.json();
     })
-     .then(function(data) {
+    .then(function(data) {
         console.log('✅ Order sent:', data);
 
-        // Order was accepted by server — now commit locally
+        // Commit locally
         var orders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
         orders.unshift(order);
         localStorage.setItem('nabzOrders', JSON.stringify(orders));
@@ -1627,18 +1669,13 @@ function placeOrder() {
         localStorage.removeItem('nabzCart');
         renderCart();
 
-               // Track the order
+        // Track the order
         if (data && data.orderId) startTrackingOrder(data.orderId);
 
-        // ⚡ Re-check first-order status after server marks it used
+        // Re-check first-order status (now that server marked used)
         setTimeout(checkFirstOrderStatus, 1000);
 
-        // NOW show confirmation
-        showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, grandTotal);
-        // ⚡ CRITICAL: Re-check first-order status now that the server has marked it used
-        setTimeout(checkFirstOrderStatus, 800);
-
-        // NOW show confirmation
+        // Show confirmation
         showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, grandTotal);
 
         // Send email
