@@ -711,12 +711,13 @@
     </div>
 </div>
 <!-- ===== FIRST ORDER FREE DELIVERY BANNER ===== -->
-<div id="firstOrderBanner" style="display:none; background: linear-gradient(135deg, #27ae60, #1e8449); color: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);">
+<div id="firstOrderBanner" style="display:none; background: linear-gradient(135deg, #27ae60, #1e8449); color: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);">
     <div style="font-size:1.6em;flex-shrink:0;">🎉</div>
     <div style="flex:1;min-width:0;">
-        <div style="font-weight:700;font-size:0.95em;">Welcome — free delivery on your first order!</div>
-        <div style="font-size:0.82em;opacity:0.9;margin-top:2px;">No delivery fee. Just order and enjoy.</div>
+        <div id="firstOrderTitle" style="font-weight:700;font-size:0.95em;">Free delivery on your first order!</div>
+        <div id="firstOrderSubtitle" style="font-size:0.82em;opacity:0.9;margin-top:2px;">Sign up and place your first order to unlock.</div>
     </div>
+    <button id="firstOrderActionBtn" onclick="firstOrderBannerAction()" style="background: white; color: #27ae60; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 0.82em; white-space: nowrap; display: none;">Sign Up</button>
 </div>
 <!-- ===== REPEAT LAST ORDER BANNER ===== -->
 <div id="repeatOrderBanner" style="display:none; background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 14px 18px; border-radius: 12px; margin-bottom: 15px; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); gap: 12px; flex-wrap: wrap;">
@@ -2038,12 +2039,11 @@ function repeatLastOrder() {
 }
 
 // ============================================================
-// FIRST ORDER — FREE DELIVERY (server-checked)
+// FIRST ORDER — FREE DELIVERY (server-checked + marketing banner)
 // ============================================================
 function checkFirstOrderStatus() {
     if (!FREE_FIRST_DELIVERY) return;
 
-    // Determine which phone to check
     var customer = null;
     try {
         customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
@@ -2053,10 +2053,10 @@ function checkFirstOrderStatus() {
         ? customer.phone
         : (localStorage.getItem('nabzLastPhone') || null);
 
-    // If we don't know the phone yet, assume not first (safe default)
+    // No phone known yet — show the generic marketing banner
     if (!phoneToCheck) {
         isFirstOrderServer = false;
-        updateFirstOrderBanner();
+        updateFirstOrderBanner('anonymous');
         return;
     }
 
@@ -2065,24 +2065,61 @@ function checkFirstOrderStatus() {
         .then(function(data) {
             isFirstOrderServer = !!data.is_first_order;
             console.log('🎁 First order status:', isFirstOrderServer);
-            updateFirstOrderBanner();
-            renderCart(); // refresh delivery fee display
+            updateFirstOrderBanner(isFirstOrderServer ? 'eligible' : 'used');
+            renderCart();
         })
         .catch(function(err) {
             console.warn('First order check failed:', err);
             isFirstOrderServer = false;
-            updateFirstOrderBanner();
+            updateFirstOrderBanner('anonymous');
         });
 }
 
-function updateFirstOrderBanner() {
+// state: 'anonymous' | 'eligible' | 'used'
+function updateFirstOrderBanner(state) {
     var banner = document.getElementById('firstOrderBanner');
-    if (!banner) return;
-    if (FREE_FIRST_DELIVERY && isFirstOrderServer) {
-        banner.style.display = 'flex';
-    } else {
+    var titleEl = document.getElementById('firstOrderTitle');
+    var subtitleEl = document.getElementById('firstOrderSubtitle');
+    var actionBtn = document.getElementById('firstOrderActionBtn');
+    if (!banner || !titleEl || !subtitleEl || !actionBtn) return;
+
+    if (state === 'used') {
         banner.style.display = 'none';
+        return;
     }
+
+    if (state === 'anonymous') {
+        titleEl.textContent = '🎉 New here? Free delivery on your first order!';
+        subtitleEl.textContent = 'Sign up now and save BD 0.500 on your first meal.';
+        actionBtn.style.display = 'inline-flex';
+        actionBtn.textContent = 'Sign Up';
+    } else if (state === 'eligible') {
+        titleEl.textContent = '🎉 Welcome — free delivery on your first order!';
+        subtitleEl.textContent = 'No delivery fee. Just order and enjoy.';
+        actionBtn.style.display = 'none';
+    }
+
+    banner.style.display = 'flex';
+}
+
+// Called when someone taps the "Sign Up" button on the banner
+function firstOrderBannerAction() {
+    // Scroll to the login/register section
+    var section = document.getElementById('customerLoginSection');
+    if (!section) return;
+
+    section.style.display = 'block';
+    document.getElementById('loginPrompt').style.display = 'block';
+    document.getElementById('customerLoginForm').style.display = 'none';
+    document.getElementById('customerRegisterForm').style.display = 'block';
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Focus on the name field after the scroll
+    setTimeout(function() {
+        var nameField = document.getElementById('custRegName');
+        if (nameField) nameField.focus();
+    }, 500);
 }
 
 function getDeliveryFee() {
@@ -2095,6 +2132,22 @@ function getDeliveryFee() {
 // ============================================================
 loadCart();
 checkCustomerLogin();
+
+// Show banner immediately based on what we know
+// (anonymous by default, or 'eligible'/'used' if customer known)
+var cachedCustomer = null;
+try {
+    cachedCustomer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
+} catch (e) {}
+
+if (cachedCustomer && cachedCustomer.phone) {
+    // We know who they are — will get proper state from server below
+    updateFirstOrderBanner('anonymous'); // show provisional, will update
+} else {
+    // Truly anonymous — show marketing banner right away
+    updateFirstOrderBanner('anonymous');
+}
+
 loadMenuFromStorage();
 checkFirstOrderStatus();
 
