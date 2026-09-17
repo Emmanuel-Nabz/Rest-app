@@ -1462,9 +1462,14 @@ function checkout() {
     var countryCodeElement = document.getElementById('countryCode');
     var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
     var phoneNumber = document.getElementById('customerPhone').value.trim();
-    var phone = countryCode + phoneNumber;
     var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
+
+    // Normalize phone to always be +973XXXXXXXX format
+    var phone = phoneNumber;
+    if (phone && phone.charAt(0) !== '+') {
+        phone = countryCode + phone;
+    }
 
     if (!name) { alert('👤 Please enter your full name.'); return; }
     if (!phoneNumber) { alert('📱 Please enter your phone number.'); return; }
@@ -1612,7 +1617,7 @@ function placeOrder() {
         }
         return res.json();
     })
-    .then(function(data) {
+     .then(function(data) {
         console.log('✅ Order sent:', data);
 
         // Order was accepted by server — now commit locally
@@ -1627,6 +1632,9 @@ function placeOrder() {
 
         // Track the order
         if (data && data.orderId) startTrackingOrder(data.orderId);
+
+        // ⚡ CRITICAL: Re-check first-order status now that the server has marked it used
+        setTimeout(checkFirstOrderStatus, 800);
 
         // NOW show confirmation
         showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, grandTotal);
@@ -2095,6 +2103,13 @@ checkFirstOrderStatus();
 })();
 
 setTimeout(checkRepeatOrder, 800);
+
+// Re-check first-order status when the tab becomes visible again
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        checkFirstOrderStatus();
+    }
+});
 
 console.log('🚀 App loaded!');
 </script>
