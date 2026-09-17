@@ -357,6 +357,100 @@
             font-size: 0.9em;
         }
         .empty-cart { color: #95a5a6; text-align: center; padding: 20px 0; font-size: 0.95em; }
+/* ===== DISCOUNT CARD ===== */
+.discount-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid #ecf0f1;
+}
+
+.discount-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95em;
+    font-weight: 700;
+    color: #8e44ad;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+.discount-card-header i {
+    color: #8e44ad;
+    font-size: 1.15em;
+}
+
+.discount-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+.discount-input-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    font-size: 1em;
+    background: white;
+    color: #2c3e50;
+    text-transform: uppercase;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+.discount-input-row input:focus {
+    border-color: #8e44ad;
+    outline: none;
+}
+.discount-input-row button {
+    padding: 12px 22px;
+    background: #8e44ad;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95em;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+.discount-input-row button:hover { background: #7d3c98; }
+.discount-input-row button:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+}
+
+#discountMessage {
+    margin-top: 10px;
+    font-size: 0.88em;
+    min-height: 20px;
+    line-height: 1.4;
+}
+#discountMessage.success { color: #27ae60; font-weight: 600; }
+#discountMessage.error { color: #e74c3c; font-weight: 600; }
+
+.discount-remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fef2f2;
+    color: #e74c3c;
+    border: 1px solid #fecaca;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.82em;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: inherit;
+}
+.discount-remove:hover { background: #fecaca; }
 
 /* ===== CHECKOUT CARDS ===== */
 .checkout-card {
@@ -804,6 +898,17 @@
             <span id="grandTotal">BD 0.500</span>
         </div>
     </div>
+    <!-- CARD: Discount Code -->
+    <div class="discount-card" id="discountCard">
+        <div class="discount-card-header">
+            <i class="fas fa-tag"></i> Have a promo code?
+        </div>
+        <div class="discount-input-row">
+            <input type="text" id="discountInput" placeholder="Enter code (e.g. WELCOME10)" autocomplete="off">
+            <button id="discountApplyBtn" onclick="applyDiscount()">Apply</button>
+        </div>
+        <div id="discountMessage"></div>
+    </div>
 
     <!-- CARD 3: Contact Details -->
     <div class="checkout-card" id="contactSection">
@@ -1070,36 +1175,84 @@ function renderCart() {
     });
     cartContainer.innerHTML = html;
 
-    var deliveryFee = getDeliveryFee();
-    var isFreeDelivery = (deliveryFee === 0 && DELIVERY_FEE > 0);
+    var baseDeliveryFee = getDeliveryFee();
+    var isFreeDelivery = (baseDeliveryFee === 0 && DELIVERY_FEE > 0);
 
-    // Rebuild summary card with dynamic delivery
+    // Apply discount if present
+    var discountAmount = 0;
+    var actualDeliveryFee = baseDeliveryFee;
+    var discountLine = '';
+
+    if (appliedDiscount) {
+        if (appliedDiscount.type === 'percent' || appliedDiscount.type === 'fixed') {
+            discountAmount = appliedDiscount.amount;
+
+            // Guard: discount can't exceed subtotal
+            if (discountAmount > subtotal) discountAmount = subtotal;
+
+            discountLine =
+                '<div class="summary-row" style="color:#8e44ad;font-weight:600;">' +
+                    '<span class="label"><i class="fas fa-tag"></i> ' + escapeHtml(appliedDiscount.code) + ' (' + escapeHtml(appliedDiscount.label) + ')</span>' +
+                    '<span>− BD ' + discountAmount.toFixed(2) + '</span>' +
+                '</div>';
+        } else if (appliedDiscount.type === 'free_delivery') {
+            actualDeliveryFee = 0;
+        }
+    }
+
+    var grandTotal = subtotal + actualDeliveryFee - discountAmount;
+    if (grandTotal < 0) grandTotal = 0;
+
+    // Summary card
     var summaryCard = document.getElementById('summaryCard');
     if (summaryCard) {
-        var deliveryHtml = isFreeDelivery
+        var deliveryHtml = (actualDeliveryFee === 0 && DELIVERY_FEE > 0)
             ? '<span style="color:#27ae60;font-weight:700;">FREE 🎉</span>'
-            : 'BD ' + deliveryFee.toFixed(2);
+            : 'BD ' + actualDeliveryFee.toFixed(2);
+
+        var firstOrderBannerHtml = (isFreeDelivery && appliedDiscount && appliedDiscount.type === 'free_delivery')
+            ? '<div style="background:linear-gradient(135deg,#27ae60,#1e8449);color:white;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:0.85em;font-weight:600;text-align:center;">🎉 First order — free delivery on us!</div>'
+            : (isFreeDelivery
+                ? '<div style="background:linear-gradient(135deg,#27ae60,#1e8449);color:white;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:0.85em;font-weight:600;text-align:center;">🎉 First order — free delivery on us!</div>'
+                : '');
 
         summaryCard.innerHTML =
             '<div class="checkout-card-header summary">' +
                 '<i class="fas fa-receipt"></i> Order Summary' +
             '</div>' +
-            (isFreeDelivery ? '<div style="background:linear-gradient(135deg,#27ae60,#1e8449);color:white;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:0.85em;font-weight:600;text-align:center;">🎉 First order — free delivery on us!</div>' : '') +
+            firstOrderBannerHtml +
             '<div class="summary-row">' +
                 '<span class="label"><i class="fas fa-box"></i> Subtotal</span>' +
                 '<span>BD ' + subtotal.toFixed(2) + '</span>' +
             '</div>' +
+            discountLine +
             '<div class="summary-row">' +
                 '<span class="label"><i class="fas fa-truck"></i> Delivery Fee</span>' +
                 '<span>' + deliveryHtml + '</span>' +
             '</div>' +
             '<div class="summary-row total">' +
                 '<span class="label"><i class="fas fa-money-bill-wave"></i> Total</span>' +
-                '<span>BD ' + (subtotal + deliveryFee).toFixed(2) + '</span>' +
+                '<span>BD ' + grandTotal.toFixed(2) + '</span>' +
             '</div>';
     }
 
-    // Summary card already has the totals rendered above
+    // Show/hide remove button when a discount is applied
+    var msg = document.getElementById('discountMessage');
+    if (msg && appliedDiscount) {
+        var existingRemove = msg.querySelector('.discount-remove');
+        if (!existingRemove) {
+            var btn = document.createElement('button');
+            btn.className = 'discount-remove';
+            btn.innerHTML = '<i class="fas fa-times"></i> Remove code';
+            btn.onclick = removeDiscount;
+            msg.appendChild(document.createElement('br'));
+            msg.appendChild(btn);
+        }
+    } else if (msg) {
+        var rem = msg.querySelector('.discount-remove');
+        if (rem) rem.remove();
+    }
+
     updateCheckoutButton(subtotal);
 }
 
@@ -1491,6 +1644,111 @@ function checkCustomerLogin() {
     } else {
         document.getElementById('customerLoginSection').style.display = 'none';
     }
+}
+// ============================================================
+// DISCOUNT CODES
+// ============================================================
+// Current applied discount state:
+// { code, type, value, amount, label }  OR null
+var appliedDiscount = null;
+
+function applyDiscount() {
+    var input = document.getElementById('discountInput');
+    var msg = document.getElementById('discountMessage');
+    var btn = document.getElementById('discountApplyBtn');
+
+    var code = input.value.trim().toUpperCase();
+    if (!code) {
+        msg.className = 'error';
+        msg.textContent = '❌ Enter a code first';
+        return;
+    }
+
+    var subtotal = 0;
+    cart.forEach(function(i) { subtotal += i.price * i.quantity; });
+
+    if (subtotal === 0) {
+        msg.className = 'error';
+        msg.textContent = '❌ Add items to your cart first';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '…';
+    msg.textContent = '';
+    msg.className = '';
+
+    fetch(API + '/discount/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code, subtotal: subtotal })
+    })
+    .then(function(res) {
+        return res.json().then(function(d) { return { ok: res.ok, data: d }; });
+    })
+    .then(function(result) {
+        btn.disabled = false;
+        btn.textContent = 'Apply';
+
+        if (!result.ok) {
+            msg.className = 'error';
+            msg.textContent = '❌ ' + (result.data.error || 'Invalid code');
+            appliedDiscount = null;
+            renderCart();
+            return;
+        }
+
+        var d = result.data;
+
+        if (d.type === 'percent') {
+            appliedDiscount = {
+                code: d.code,
+                type: 'percent',
+                value: d.value,
+                amount: d.discount,
+                label: d.value + '% off'
+            };
+            msg.className = 'success';
+            msg.textContent = '✅ ' + d.code + ' applied — ' + d.value + '% off (BD ' + d.discount.toFixed(2) + ' saved)';
+        } else if (d.type === 'fixed') {
+            appliedDiscount = {
+                code: d.code,
+                type: 'fixed',
+                value: d.value,
+                amount: d.discount,
+                label: 'BD ' + d.value.toFixed(2) + ' off'
+            };
+            msg.className = 'success';
+            msg.textContent = '✅ ' + d.code + ' applied — BD ' + d.discount.toFixed(2) + ' off';
+        } else if (d.type === 'free_delivery') {
+            appliedDiscount = {
+                code: d.code,
+                type: 'free_delivery',
+                amount: DELIVERY_FEE,
+                label: 'Free delivery'
+            };
+            msg.className = 'success';
+            msg.textContent = '✅ ' + d.code + ' applied — free delivery';
+        }
+
+        renderCart();
+    })
+    .catch(function(err) {
+        console.error('Discount error:', err);
+        btn.disabled = false;
+        btn.textContent = 'Apply';
+        msg.className = 'error';
+        msg.textContent = '❌ Network error — try again';
+    });
+}
+
+function removeDiscount() {
+    appliedDiscount = null;
+    var input = document.getElementById('discountInput');
+    if (input) input.value = '';
+    var msg = document.getElementById('discountMessage');
+    if (msg) { msg.textContent = ''; msg.className = ''; }
+    renderCart();
 }
 
 // ============================================================
