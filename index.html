@@ -1307,19 +1307,16 @@ function hideCustomerLogin() {
 }
 
 function customerLogin() {
-        var phoneDigits = document.getElementById('custLoginPhone').value.trim();
-    var phone = phoneDigits;
-    if (phone && phone.charAt(0) !== '+') {
-        if (/^\d{8}$/.test(phone)) {
-            phone = '+973' + phone;
-        } else {
-            phone = '+973' + phone.replace(/^0+/, '');
-        }
-    }
+    var rawPhone = document.getElementById('custLoginPhone').value.trim();
     var errorEl = document.getElementById('custLoginError');
     errorEl.textContent = '';
 
-    if (!phone) { errorEl.textContent = '❌ Please enter your phone number.'; return; }
+    if (!rawPhone) { errorEl.textContent = '❌ Please enter your phone number.'; return; }
+
+    // Same normalization as registration
+    var digits = rawPhone.replace(/\D/g, '');
+    var phone = '+973' + digits.slice(-8);
+    console.log('📱 Login phone:', rawPhone, '→', phone);
 
     fetch(API + '/customers/lookup?phone=' + encodeURIComponent(phone))
         .then(function(response) {
@@ -1350,19 +1347,14 @@ function customerLogin() {
 
 function customerRegister() {
     var name = document.getElementById('custRegName').value.trim();
-    var phoneDigits = document.getElementById('custRegPhone').value.trim();
+    var rawPhone = document.getElementById('custRegPhone').value.trim();
     var address = document.getElementById('custRegAddress').value.trim();
 
-    // Bahrain default: prepend +973 if no country code
-    var phone = phoneDigits;
-    if (phone && phone.charAt(0) !== '+') {
-        // If it's a local Bahrain number (8 digits), add country code
-        if (/^\d{8}$/.test(phone)) {
-            phone = '+973' + phone;
-        } else {
-            phone = '+973' + phone.replace(/^0+/, '');
-        }
-    }
+    // Save as +973XXXXXXXX — clean and consistent
+    var digits = rawPhone.replace(/\D/g, '');
+    var phone = '+973' + digits.slice(-8);
+    console.log('📱 Register phone:', rawPhone, '→', phone);
+
     var errorEl = document.getElementById('custRegError');
     errorEl.textContent = '';
 
@@ -1540,12 +1532,16 @@ function closePhoneConfirm() {
 function confirmPhoneAndOrder() {
     // Gather all the order data fresh from the form
     var name = document.getElementById('customerName').value.trim();
-    var countryCodeElement = document.getElementById('countryCode');
-    var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
-    var phoneNumber = document.getElementById('customerPhone').value.trim();
-    var phone = countryCode + phoneNumber;
+    var rawPhone = document.getElementById('customerPhone').value.trim();
     var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
+
+    // Same clean format
+    var digits = rawPhone.replace(/\D/g, '');
+    var phone = '+973' + digits.slice(-8);
+    console.log('📱 Confirm phone:', rawPhone, '→', phone);
+
+    var phoneNumber = digits.slice(-8);  // kept for validation below
 
     // Validate once more
     if (!name || !phoneNumber || !address) {
@@ -1630,9 +1626,14 @@ function placeOrder() {
         localStorage.removeItem('nabzCart');
         renderCart();
 
-        // Track the order
+               // Track the order
         if (data && data.orderId) startTrackingOrder(data.orderId);
 
+        // ⚡ Re-check first-order status after server marks it used
+        setTimeout(checkFirstOrderStatus, 1000);
+
+        // NOW show confirmation
+        showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, grandTotal);
         // ⚡ CRITICAL: Re-check first-order status now that the server has marked it used
         setTimeout(checkFirstOrderStatus, 800);
 
@@ -2103,6 +2104,13 @@ checkFirstOrderStatus();
 })();
 
 setTimeout(checkRepeatOrder, 800);
+
+// Re-check first-order status when the tab becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        checkFirstOrderStatus();
+    }
+});
 
 // Re-check first-order status when the tab becomes visible again
 document.addEventListener('visibilitychange', function() {
