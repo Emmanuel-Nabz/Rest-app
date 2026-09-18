@@ -1183,6 +1183,35 @@ function attachPasswordEyes() {
 
 document.addEventListener('DOMContentLoaded', attachPasswordEyes);
 // ============================================================
+// PHONE NORMALIZATION
+// Accepts any input + a country code, returns +CCXXXXXXXX format
+// ============================================================
+function normalizePhone(rawPhone, countryCode) {
+    if (!rawPhone) return '';
+
+    var trimmed = String(rawPhone).trim();
+
+    // If the user typed a full international number (+971...), trust it as-is
+    if (trimmed.charAt(0) === '+') {
+        var intlDigits = trimmed.replace(/\D/g, '');
+        return intlDigits ? '+' + intlDigits : '';
+    }
+
+    // Strip all non-digits from the local number
+    var digits = trimmed.replace(/\D/g, '');
+    if (!digits) return '';
+
+    // Strip leading zeros (e.g. UAE 0501234567 → 501234567)
+    digits = digits.replace(/^0+/, '');
+
+    // Use the passed country code, default to Bahrain
+    var cc = countryCode || '+973';
+    cc = cc.replace(/[^0-9+]/g, '');
+    if (cc.charAt(0) !== '+') cc = '+' + cc;
+
+    return cc + digits;
+}
+// ============================================================
 // XSS PROTECTION
 // ============================================================
 function escapeHtml(str) {
@@ -1711,9 +1740,8 @@ function customerLogin() {
 
     if (!rawPhone) { errorEl.textContent = '❌ Please enter your phone number.'; return; }
 
-    // Same normalization as registration
-    var digits = rawPhone.replace(/\D/g, '');
-    var phone = '+973' + digits.slice(-8);
+    // Login form has no country code selector — default to +973
+    var phone = normalizePhone(rawPhone, '+973');
     console.log('📱 Login phone:', rawPhone, '→', phone);
 
     fetch(API + '/customers/lookup?phone=' + encodeURIComponent(phone))
@@ -1748,9 +1776,8 @@ function customerRegister() {
     var rawPhone = document.getElementById('custRegPhone').value.trim();
     var address = document.getElementById('custRegAddress').value.trim();
 
-    // Save as +973XXXXXXXX — clean and consistent
-    var digits = rawPhone.replace(/\D/g, '');
-    var phone = '+973' + digits.slice(-8);
+    // Register form has no country code selector — default to +973
+    var phone = normalizePhone(rawPhone, '+973');
     console.log('📱 Register phone:', rawPhone, '→', phone);
 
     var errorEl = document.getElementById('custRegError');
@@ -1960,11 +1987,9 @@ function checkout() {
     var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
 
-    // Normalize phone to always be +973XXXXXXXX format
-    var phone = phoneNumber;
-    if (phone && phone.charAt(0) !== '+') {
-        phone = countryCode + phone;
-    }
+    // Normalize phone to +CCXXXXXXXX format
+    var phone = normalizePhone(phoneNumber, countryCode);
+    console.log('📱 Checkout phone:', phoneNumber, '+', countryCode, '→', phone);
 
     if (!name) { alert('👤 Please enter your full name.'); return; }
     if (!phoneNumber) { alert('📱 Please enter your phone number.'); return; }
@@ -2039,12 +2064,13 @@ function confirmPhoneAndOrder() {
     var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
 
-    // Same clean format
-    var digits = rawPhone.replace(/\D/g, '');
-    var phone = '+973' + digits.slice(-8);
-    console.log('📱 Confirm phone:', rawPhone, '→', phone);
+    // Use the country code the customer selected in the checkout form
+    var countryCodeEl = document.getElementById('countryCode');
+    var cc = countryCodeEl ? countryCodeEl.value : '+973';
+    var phone = normalizePhone(rawPhone, cc);
+    console.log('📱 Confirm phone:', rawPhone, '+', cc, '→', phone);
 
-    var phoneNumber = digits.slice(-8);  // kept for validation below
+    var phoneNumber = phone.replace(/\D/g, '');  // for validation below
 
     // Validate once more
     if (!name || !phoneNumber || !address) {
