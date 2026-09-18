@@ -907,9 +907,19 @@
     </div>
     <div id="customerLoginForm" style="display: none;">
         <h3>Sign In</h3>
-        <div class="form-group">
+          <div class="form-group">
             <label><i class="fas fa-phone"></i> Phone Number</label>
-            <input type="tel" id="custLoginPhone" class="input-field" placeholder="Enter phone number">
+            <div class="phone-row">
+                <select id="custLoginCountryCode" class="input-field">
+                    <option value="+973">🇧🇭 +973</option>
+                    <option value="+971">🇦🇪 +971</option>
+                    <option value="+256">🇺🇬 +256</option>
+                    <option value="+966">🇸🇦 +966</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+1">🇺🇸 +1</option>
+                </select>
+                <input type="tel" id="custLoginPhone" class="input-field" placeholder="Phone number">
+            </div>
         </div>
         <div class="login-buttons">
             <button class="btn-signin" onclick="customerLogin()">Sign In</button>
@@ -924,9 +934,19 @@
             <label><i class="fas fa-user"></i> Full Name</label>
             <input type="text" id="custRegName" class="input-field" placeholder="Enter your name">
         </div>
-        <div class="form-group">
+           <div class="form-group">
             <label><i class="fas fa-phone"></i> Phone Number</label>
-            <input type="tel" id="custRegPhone" class="input-field" placeholder="Enter phone number">
+            <div class="phone-row">
+                <select id="custRegCountryCode" class="input-field">
+                    <option value="+973">🇧🇭 +973</option>
+                    <option value="+971">🇦🇪 +971</option>
+                    <option value="+256">🇺🇬 +256</option>
+                    <option value="+966">🇸🇦 +966</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+1">🇺🇸 +1</option>
+                </select>
+                <input type="tel" id="custRegPhone" class="input-field" placeholder="Phone number">
+            </div>
         </div>
         <div class="form-group">
             <label><i class="fas fa-map-pin"></i> Delivery Address</label>
@@ -1740,9 +1760,10 @@ function customerLogin() {
 
     if (!rawPhone) { errorEl.textContent = '❌ Please enter your phone number.'; return; }
 
-    // Login form has no country code selector — default to +973
-    var phone = normalizePhone(rawPhone, '+973');
-    console.log('📱 Login phone:', rawPhone, '→', phone);
+    var loginCcEl = document.getElementById('custLoginCountryCode');
+    var loginCc = loginCcEl ? loginCcEl.value : '+973';
+    var phone = normalizePhone(rawPhone, loginCc);
+    console.log('📱 Login phone:', rawPhone, '+', loginCc, '→', phone);
 
     fetch(API + '/customers/lookup?phone=' + encodeURIComponent(phone))
         .then(function(response) {
@@ -1776,9 +1797,10 @@ function customerRegister() {
     var rawPhone = document.getElementById('custRegPhone').value.trim();
     var address = document.getElementById('custRegAddress').value.trim();
 
-    // Register form has no country code selector — default to +973
-    var phone = normalizePhone(rawPhone, '+973');
-    console.log('📱 Register phone:', rawPhone, '→', phone);
+    var regCcEl = document.getElementById('custRegCountryCode');
+    var regCc = regCcEl ? regCcEl.value : '+973';
+    var phone = normalizePhone(rawPhone, regCc);
+    console.log('📱 Register phone:', rawPhone, '+', regCc, '→', phone);
 
     var errorEl = document.getElementById('custRegError');
     errorEl.textContent = '';
