@@ -869,7 +869,16 @@
     </style>
 </head>
 <body>
-
+<!-- ===== ADD TO HOME SCREEN BANNER ===== -->
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e1e1e;border-top:3px solid #e67e22;padding:16px 18px;z-index:10001;box-shadow:0 -8px 25px rgba(0,0,0,0.5);align-items:center;gap:12px;">
+    <img id="installIcon" src="icon-192.png" alt="" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;background:#e67e22;">
+    <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:0.95em;color:#fff;margin-bottom:2px;">Install Nabz-Eats</div>
+        <div id="installText" style="font-size:0.8em;color:#95a5a6;line-height:1.3;">Add to your home screen for quick access</div>
+    </div>
+    <button id="installBtn" onclick="handleInstallClick()" style="background:#e67e22;color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:700;font-size:0.85em;cursor:pointer;white-space:nowrap;">Install</button>
+    <button onclick="dismissInstall()" style="background:transparent;color:#7f8c8d;border:none;font-size:1.3em;cursor:pointer;padding:4px 8px;line-height:1;">&times;</button>
+</div>
 <!-- ===== WELCOME BANNER ===== -->
 <div id="customerWelcome">
     <span id="welcomeName"></span>
@@ -2774,7 +2783,109 @@ document.addEventListener('visibilitychange', function() {
         checkFirstOrderStatus();
     }
 });
+// ============================================================
+// ADD TO HOME SCREEN
+// ============================================================
+var deferredInstallPrompt = null;
+
+function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+}
+
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isFirefox() {
+    return /firefox/i.test(navigator.userAgent) && !/seamonkey/i.test(navigator.userAgent);
+}
+
+function showInstallBanner() {
+    if (isStandalone()) return;
+    if (localStorage.getItem('nabzInstallDismissed') === '1') return;
+
+    var banner = document.getElementById('installBanner');
+    if (!banner) return;
+    banner.style.display = 'flex';
+
+    // Adjust the button label based on the browser
+    var btn = document.getElementById('installBtn');
+    if (btn && isFirefox()) {
+        btn.textContent = 'How to add';
+    }
+}
+
+function dismissInstall() {
+    var banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem('nabzInstallDismissed', '1');
+}
+
+function handleInstallClick() {
+    // Android/Chrome — native prompt is available
+    if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function(choice) {
+            if (choice.outcome === 'accepted') {
+                console.log('>>> installed');
+            }
+            deferredInstallPrompt = null;
+            dismissInstall();
+        });
+        return;
+    }
+
+    // iOS — no native prompt; show instructions
+    if (isIOS()) {
+        alert('To install:\n\n1. Tap the Share button (□↑) at the bottom of Safari\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"');
+        return;
+    }
+
+    // Firefox — no native prompt
+    if (isFirefox()) {
+        alert('To add to your home screen:\n\n1. Tap the ⋮ menu in Firefox\n2. Tap "Add app to Home screen"\n3. Tap "Add"');
+        return;
+    }
+
+    // Generic fallback
+    alert('Open your browser menu and choose "Install app" or "Add to Home Screen".');
+}
+
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    setTimeout(showInstallBanner, 1500);
+});
+
+window.addEventListener('appinstalled', function() {
+    dismissInstall();
+    console.log('>>> app installed');
+});
+
+if (isIOS() && !isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
+    setTimeout(showInstallBanner, 2500);
+}
+
+setTimeout(function() {
+    if (!isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
+        showInstallBanner();
+    }
+}, 3000);
 console.log('🚀 App loaded!');
+// ============================================================
+// SERVICE WORKER (required for Chrome install prompt)
+// ============================================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').then(function(reg) {
+            console.log('>>> SW registered', reg.scope);
+        }).catch(function(err) {
+            console.warn('SW registration failed:', err);
+        });
+    });
+}
 </script>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQJlGOj-bHTmrw88BV6jXH-ZDA3sOx4x4&libraries=places&callback=initAutocomplete" async defer></script>
