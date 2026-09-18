@@ -2921,6 +2921,27 @@ setTimeout(function() {
         showInstallBanner();
     }
 }, 3000);
+// ============================================================
+// REMEMBER LAST COUNTRY CODE
+// ============================================================
+(function initCountryCodeMemory() {
+    var fields = ['countryCode', 'custLoginCountryCode', 'custRegCountryCode'];
+    var saved = localStorage.getItem('nabzLastCountryCode');
+
+    fields.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+
+        // Restore last-used code (defaults to Bahrain if nothing saved)
+        if (saved) el.value = saved;
+
+        // Save whenever it changes
+        el.addEventListener('change', function() {
+            localStorage.setItem('nabzLastCountryCode', el.value);
+        });
+    });
+})();
+
 console.log('🚀 App loaded!');
 // ============================================================
 // SERVICE WORKER (required for Chrome install prompt)
