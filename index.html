@@ -1156,6 +1156,7 @@
 // CONFIG
 // ============================================================
 var API = 'https://api.nabztech.com/api';
+var APP_VERSION = '1.0.0';   // bump this when you deploy a new customer app build
 var DELIVERY_FEE = 0.500;
 var MIN_ORDER = 3.000;
 var FREE_FIRST_DELIVERY = true;   // set to false to disable
@@ -2841,7 +2842,65 @@ function getDeliveryFee() {
     if (FREE_FIRST_DELIVERY && isFirstOrderServer) return 0;
     return DELIVERY_FEE;
 }
+// ============================================================
+// FORCE UPDATE CHECK
+// ============================================================
+function checkAppVersion() {
+    return fetch(API + '/app-version?t=' + Date.now(), { cache: 'no-store' })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            var serverVersion = data.customer;
+            if (!serverVersion) return false;
 
+            if (serverVersion !== APP_VERSION) {
+                console.log('>>> Version mismatch. Local:', APP_VERSION, 'Server:', serverVersion);
+                forceReload();
+                return true;
+            }
+            return false;
+        })
+        .catch(function(err) {
+            console.warn('>>> Version check failed:', err.message);
+            return false;
+        });
+}
+
+function forceReload() {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
+    overlay.innerHTML =
+        '<div style="background:white;border-radius:20px;padding:32px 26px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+            '<div style="font-size:3em;margin-bottom:12px;">🔄</div>' +
+            '<h2 style="color:#2c3e50;margin-bottom:12px;font-size:1.3em;">Updating App</h2>' +
+            '<p style="color:#7f8c8d;font-size:0.92em;line-height:1.6;">A new version is available. The app will reload now to get the latest features and fixes.</p>' +
+            '<div style="margin-top:20px;font-size:1.8em;">⏳</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+
+    var tasks = [];
+
+    if ('caches' in window) {
+        tasks.push(
+            caches.keys().then(function(names) {
+                return Promise.all(names.map(function(name) { return caches.delete(name); }));
+            })
+        );
+    }
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+        tasks.push(
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+                return Promise.all(regs.map(function(r) { return r.update(); }));
+            })
+        );
+    }
+
+    Promise.all(tasks).then(function() {
+        setTimeout(function() {
+            location.reload(true);
+        }, 1500);
+    });
+}
 // ============================================================
 // BOOT
 // ============================================================
