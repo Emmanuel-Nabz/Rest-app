@@ -1850,13 +1850,24 @@ function prefillCustomerDetails(customer) {
 }
 
 function customerLogout() {
-    if (!confirm('Logout?')) return;
-    localStorage.removeItem('nabzCurrentCustomer');
-    document.getElementById('customerWelcome').style.display = 'none';
-    document.getElementById('customerLoginSection').style.display = 'none';
-    document.getElementById('customerName').value = '';
-    document.getElementById('customerPhone').value = '';
-    document.getElementById('deliveryAddress').value = '';
+    showConfirm({
+        title: 'Log out?',
+        message: 'You will need to sign in again to place an order. Your cart will be kept.',
+        iconClass: 'fa-sign-out-alt',
+        iconVariant: 'neutral',
+        confirmStyle: 'primary',
+        confirmText: 'Log Out',
+        cancelText: 'Stay Logged In'
+    }).then(function(confirmed) {
+        if (!confirmed) return;
+
+        localStorage.removeItem('nabzCurrentCustomer');
+        document.getElementById('customerWelcome').style.display = 'none';
+        document.getElementById('customerLoginSection').style.display = 'none';
+        document.getElementById('customerName').value = '';
+        document.getElementById('customerPhone').value = '';
+        document.getElementById('deliveryAddress').value = '';
+    });
 }
 
 function checkCustomerLogin() {
@@ -1990,15 +2001,15 @@ function checkout() {
         return;
     }
 
-     if (cart.length === 0) {
-        alert('🛒 Your cart is empty! Add some items first.');
+      if (cart.length === 0) {
+        showToast('🛒 Your cart is empty — add some items first');
         return;
     }
 
     var currentSubtotal = 0;
     cart.forEach(function(i) { currentSubtotal += i.price * i.quantity; });
-    if (currentSubtotal < MIN_ORDER) {
-        alert('⚠️ Minimum order is BD ' + MIN_ORDER.toFixed(2) + '.\n\nPlease add BD ' + (MIN_ORDER - currentSubtotal).toFixed(2) + ' more.');
+     if (currentSubtotal < MIN_ORDER) {
+        showToast('⚠️ Minimum order is BD ' + MIN_ORDER.toFixed(2) + ' — add BD ' + (MIN_ORDER - currentSubtotal).toFixed(2) + ' more');
         return;
     }
 
@@ -2013,9 +2024,9 @@ function checkout() {
     var phone = normalizePhone(phoneNumber, countryCode);
     console.log('📱 Checkout phone:', phoneNumber, '+', countryCode, '→', phone);
 
-    if (!name) { alert('👤 Please enter your full name.'); return; }
-    if (!phoneNumber) { alert('📱 Please enter your phone number.'); return; }
-    if (!address) { alert('📍 Please enter your delivery address.'); return; }
+        if (!name) { showToast('👤 Please enter your full name'); return; }
+        if (!phoneNumber) { showToast('📱 Please enter your phone number'); return; }
+        if (!address) { showToast('📍 Please enter your delivery address'); return; }
 
     // Show the confirmation popup
     showPhoneConfirmation(name, phone, address, payment);
@@ -2096,8 +2107,8 @@ function confirmPhoneAndOrder() {
 
     // Validate once more
     if (!name || !phoneNumber || !address) {
-        alert('Something is missing. Please check your details.');
         closePhoneConfirm();
+        showToast('⚠️ Something is missing — please check your details');
         return;
     }
 
@@ -2234,9 +2245,17 @@ function submitOrder(order, name, phone, address, payment, orderSummary, subtota
         // Send email
         sendOrderEmail(name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal, discountCode, discountAmount);
     })
-    .catch(function(error) {
+      .catch(function(error) {
         console.error('❌ Order error:', error);
-        alert('❌ Sorry, we could not place your order:\n\n' + error.message + '\n\nPlease check your connection and try again.');
+        showConfirm({
+            title: 'Could not place order',
+            message: escapeHtml(error.message) + '<br><br>Please check your connection and try again, or contact us on WhatsApp.',
+            iconClass: 'fa-exclamation-triangle',
+            iconVariant: 'neutral',
+            confirmStyle: 'primary',
+            confirmText: 'Try Again',
+            cancelText: 'Close'
+        });
     });
 }
 
@@ -2589,10 +2608,15 @@ function reorder(orderJson) {
     });
 }
 
-function showToast(msg) {
+function showToast(msg, type) {
+    var bg = '#2c3e50';
+    if (type === 'warn') bg = '#e67e22';
+    if (type === 'error') bg = '#e74c3c';
+    if (type === 'success') bg = '#27ae60';
+
     var t = document.createElement('div');
     t.textContent = msg;
-    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#2c3e50;color:white;padding:12px 20px;border-radius:24px;font-weight:600;z-index:99999;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
+    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:' + bg + ';color:white;padding:12px 20px;border-radius:24px;font-weight:600;z-index:99999;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
     document.body.appendChild(t);
     setTimeout(function() { t.remove(); }, 2500);
 }
@@ -2683,7 +2707,31 @@ function repeatLastOrder() {
 
     // Check current cart is empty first
     if (cart.length > 0) {
-        if (!confirm('Your cart has items. Replace it with your last order?')) return;
+      showConfirm({
+    title: 'Replace your cart?',
+    message: 'Your cart has items. They will be cleared and replaced with your last order.',
+    iconClass: 'fa-redo',
+    iconVariant: 'neutral',
+    confirmStyle: 'primary',
+    confirmText: 'Replace',
+    cancelText: 'Keep Current'
+}).then(function(confirmed) {
+    if (!confirmed) return;
+    cart = [];
+    last.items.forEach(function(item) {
+        cart.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity
+        });
+    });
+    saveCart();
+    renderCart();
+    showToast('✅ ' + last.items.length + ' item(s) added to cart');
+    document.getElementById('repeatOrderBanner').style.display = 'none';
+    setTimeout(scrollToCart, 300);
+});
         cart = [];
     }
 
