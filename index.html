@@ -2316,26 +2316,28 @@ function showOrderConfirmation(name, orderSummary, subtotal, actualDeliveryFee, 
 // SEND ORDER EMAIL
 // ============================================================
 function sendOrderEmail(name, phone, address, payment, orderSummary, subtotal, actualDeliveryFee, grandTotal, discountCode, discountAmount) {
-    fetch('https://formsubmit.co/ajax/makemmy98@yahoo.com', {
+    fetch(API + '/orders/send-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            _subject: '🍕 New Order from Nabz-Tech Eats',
-            Name: name, Phone: phone, Address: address,
-            'Payment Method': payment,
-            'Order Summary': orderSummary,
-            Subtotal: 'BD ' + subtotal.toFixed(2),
-            'Discount Code': discountCode || 'None',
-            'Discount Amount': discountAmount > 0 ? '− BD ' + discountAmount.toFixed(2) : 'None',
-            'Delivery Fee': actualDeliveryFee === 0 ? 'FREE' : 'BD ' + actualDeliveryFee.toFixed(2),
-            'Total Amount': 'BD ' + grandTotal.toFixed(2),
-            Verified: '✅ Yes',
-            _captcha: 'false'
+            name: name,
+            phone: phone,
+            address: address,
+            payment: payment,
+            orderSummary: orderSummary,
+            subtotal: subtotal,
+            deliveryFee: actualDeliveryFee,
+            grandTotal: grandTotal,
+            discountCode: discountCode,
+            discountAmount: discountAmount
         })
     })
     .then(function(r) { return r.json(); })
-    .then(function() { console.log('📧 Email sent'); })
-    .catch(function(err) { console.warn('📧 Email failed:', err); });
+    .then(function(res) {
+        if (res.success) console.log('📧 Order email sent');
+        else console.warn('📧 Email failed:', res.error);
+    })
+    .catch(function(err) { console.warn('📧 Email network error:', err); });
 }
 
 function closeConfirmation() {
