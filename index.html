@@ -650,7 +650,7 @@
         #orderTrackingSection {
             display: none;
             position: fixed;
-            bottom: 80px;
+            bottom: 140px;
             left: 10px;
             right: 10px;
             z-index: 999;
@@ -848,7 +848,7 @@
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 8px 25px rgba(230,126,34,0.5);
-    z-index: 998;
+    z-index: 999;
     max-width: 600px;
     margin: 0 auto;
     cursor: pointer;
@@ -2232,9 +2232,10 @@ function submitOrder(order, name, phone, address, payment, orderSummary, subtota
         }
 
         // Clear cart and discount
-        cart = [];
+               cart = [];
         appliedDiscount = null;
-        localStorage.removeItem('nabzCart');
+        localStorage.removeItem('harvestCart');
+        renderMenu();      // ← re-render menu items to reset their qty displays
         renderCart();
 
         // Track the order
@@ -2349,10 +2350,11 @@ function closeConfirmation() {
         if (el) el.remove();
     });
 
-    try {
+        try {
         cart = [];
-        localStorage.removeItem('nabzCart');
+        localStorage.removeItem('harvestCart');
         window.tempCoordinates = null;
+        renderMenu();      // ← reset menu items
         renderCart();
     } catch (e) {
         console.warn('closeConfirmation cleanup:', e);
