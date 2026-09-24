@@ -934,7 +934,7 @@
 </head>
 <body>
 <!-- ===== ADD TO HOME SCREEN BANNER ===== -->
-<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e1e1e;border-top:3px solid #e67e22;padding:16px 18px;z-index:10001;box-shadow:0 -8px 25px rgba(0,0,0,0.5);align-items:center;gap:12px;">
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e1e1e;border-top:3px solid #e67e22;padding:16px 18px;z-index:999998;box-shadow:0 -8px 25px rgba(0,0,0,0.5);align-items:center;gap:12px;"></div>
     <img id="installIcon" src="icon-192.png" alt="" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;background:#e67e22;">
     <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:0.95em;color:#fff;margin-bottom:2px;">Install Nabz-Eats</div>
@@ -3187,23 +3187,12 @@ function showInstallBanner() {
 
     var banner = document.getElementById('installBanner');
     if (!banner) return;
-    banner.style.display = 'flex';
 
-    // Adjust the button label based on the browser
+    // Always use the same label — the click handler decides what happens
     var btn = document.getElementById('installBtn');
-    if (!btn) return;
+    if (btn) btn.textContent = 'Install';
 
-    if (isFirefox()) {
-        btn.textContent = 'How to add';
-    } else if (isIOS()) {
-        btn.textContent = 'How to add';
-    } else if (deferredInstallPrompt) {
-        btn.textContent = 'Install';
-    } else {
-        // Chromium browser but event hasn't fired yet — button still says Install
-        // but the click handler will handle gracefully
-        btn.textContent = 'Install';
-    }
+    banner.style.display = 'flex';
 }
 
 function dismissInstall() {
@@ -3211,59 +3200,101 @@ function dismissInstall() {
     if (banner) banner.style.display = 'none';
     localStorage.setItem('nabzInstallDismissed', '1');
 }
-
 function handleInstallClick() {
-    // ─── Case 1: Native Chrome/Edge/Android prompt available ───
+    // ─── Case 1: Chrome / Edge / Samsung — real install prompt available ───
     if (deferredInstallPrompt) {
+        console.log('🚀 Triggering native install prompt');
         deferredInstallPrompt.prompt();
 
         deferredInstallPrompt.userChoice.then(function(choice) {
             console.log('Install choice:', choice.outcome);
-
             if (choice.outcome === 'accepted') {
-                // User tapped "Install" in the system dialog
                 dismissInstall();
             } else {
-                // User tapped "Cancel" — keep the banner so they can retry
                 showToast('You can install anytime from the banner');
             }
-
             // The event can only be used once
             deferredInstallPrompt = null;
         });
-
-        return; // ← do NOT fall through to instructions
+        return;
     }
 
-    // ─── Case 2: iOS Safari (no API — instructions required) ───
+    // ─── Case 2: iOS Safari — show instructions ───
     if (isIOS()) {
-        alert(
-            'To install:\n\n' +
-            '1. Tap the Share button (□↑) at the bottom of Safari\n' +
-            '2. Scroll down and tap "Add to Home Screen"\n' +
-            '3. Tap "Add"'
-        );
+        showInstallInstructions('ios');
         return;
     }
 
-    // ─── Case 3: Firefox Android (no API — instructions required) ───
+    // ─── Case 3: Firefox — show instructions ───
     if (isFirefox()) {
-        alert(
-            'To add to your home screen:\n\n' +
-            '1. Tap the ⋮ menu in Firefox\n' +
-            '2. Tap "Add app to Home screen"\n' +
-            '3. Tap "Add"'
-        );
+        showInstallInstructions('firefox');
         return;
     }
 
-    // ─── Case 4: Unknown browser, no native prompt available ───
-    // This only runs if the banner is showing but install isn't actually possible.
-    // In that case, just hide the banner since it's useless.
-    dismissInstall();
-    showToast('Your browser doesn\'t support one-tap install');
+    // ─── Case 4: Any other browser — generic instructions ───
+    showInstallInstructions('generic');
 }
 
+// ============================================================
+// PRETTY INSTALL INSTRUCTIONS MODAL (better than alert())
+// ============================================================
+function showInstallInstructions(platform) {
+    var existing = document.getElementById('installInstructionsModal');
+    if (existing) existing.remove();
+
+    var title, steps;
+
+    if (platform === 'ios') {
+        title = 'Add to Home Screen';
+        steps = [
+            'Tap the <strong>Share</strong> button <span style="font-size:1.3em;">□↑</span> at the bottom of Safari',
+            'Scroll down and tap <strong>"Add to Home Screen"</strong>',
+            'Tap <strong>"Add"</strong> in the top-right corner'
+        ];
+    } else if (platform === 'firefox') {
+        title = 'Add to Home Screen';
+        steps = [
+            'Tap the <strong>⋮</strong> menu in Firefox',
+            'Tap <strong>"Add app to Home screen"</strong>',
+            'Tap <strong>"Add"</strong> to confirm'
+        ];
+    } else {
+        title = 'Add to Home Screen';
+        steps = [
+            'Open your browser menu <strong>(⋮ or ⋯)</strong>',
+            'Look for <strong>"Install app"</strong> or <strong>"Add to Home Screen"</strong>',
+            'Tap it to install'
+        ];
+    }
+
+    var stepsHtml = steps.map(function(s, i) {
+        return '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;">' +
+                   '<div style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#e67e22;color:white;font-weight:700;font-size:0.85em;display:flex;align-items:center;justify-content:center;">' + (i + 1) + '</div>' +
+                   '<div style="flex:1;font-size:0.92em;color:#2c3e50;line-height:1.5;">' + s + '</div>' +
+               '</div>';
+    }).join('');
+
+    var overlay = document.createElement('div');
+    overlay.id = 'installInstructionsModal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;animation:fadeIn 0.25s;';
+
+    overlay.innerHTML =
+        '<div style="background:white;border-radius:20px;padding:26px 22px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:bounceIn 0.35s;">' +
+            '<div style="text-align:center;margin-bottom:20px;">' +
+                '<div style="font-size:2.6em;margin-bottom:8px;">📲</div>' +
+                '<h2 style="color:#2c3e50;font-size:1.2em;font-weight:700;margin:0;">' + title + '</h2>' +
+            '</div>' +
+            stepsHtml +
+            '<button onclick="document.getElementById(\'installInstructionsModal\').remove()" style="width:100%;background:linear-gradient(135deg,#27ae60,#1e8449);color:white;border:none;padding:14px;border-radius:24px;font-size:1em;font-weight:700;cursor:pointer;margin-top:8px;">Got it</button>' +
+        '</div>';
+
+    document.body.appendChild(overlay);
+
+    // Tap outside to close
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.remove();
+    });
+}
 window.addEventListener('beforeinstallprompt', function(e) {
     console.log('✅ beforeinstallprompt fired — install is available');
 
@@ -3281,23 +3312,16 @@ window.addEventListener('beforeinstallprompt', function(e) {
 
 // If the browser can't install (PWA criteria not met), don't show the banner at all
 window.addEventListener('appinstalled', function() {
-    console.log('✅ App installed');
-    dismissInstall();
-});
-
-window.addEventListener('appinstalled', function() {
     dismissInstall();
     console.log('>>> app installed');
 });
-
-// Only auto-show the banner on iOS (which has no native prompt API)
-// or after we've actually received the deferredInstallPrompt event.
-if (isIOS() && !isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
+// Always show the banner to non-installed users (after a short delay).
+// The button will do the right thing per platform:
+//   - Chrome/Edge/Samsung on Android: triggers the real system install dialog
+//   - iOS Safari / Firefox: shows step-by-step instructions
+if (!isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
     setTimeout(showInstallBanner, 2500);
 }
-
-// NOTE: Do NOT auto-show on Android/Chrome. Wait for beforeinstallprompt.
-// The banner appears inside that event handler instead.
 // ============================================================
 // REMEMBER LAST COUNTRY CODE
 // ============================================================
