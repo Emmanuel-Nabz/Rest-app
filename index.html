@@ -3197,8 +3197,20 @@ function showInstallBanner() {
 
 function dismissInstall() {
     var banner = document.getElementById('installBanner');
-    if (banner) banner.style.display = 'none';
+    if (banner) {
+        // Hide with animation, then remove from DOM
+        banner.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+        banner.style.transform = 'translateY(100%)';
+        banner.style.opacity = '0';
+
+        setTimeout(function() {
+            banner.style.display = 'none';
+            banner.style.transform = '';
+            banner.style.opacity = '';
+        }, 260);
+    }
     localStorage.setItem('nabzInstallDismissed', '1');
+    console.log('✅ Install banner dismissed permanently');
 }
 function handleInstallClick() {
     // ─── Case 1: Chrome / Edge / Samsung — real install prompt available ───
@@ -3208,12 +3220,16 @@ function handleInstallClick() {
 
         deferredInstallPrompt.userChoice.then(function(choice) {
             console.log('Install choice:', choice.outcome);
+
             if (choice.outcome === 'accepted') {
+                // User installed → hide banner permanently
                 dismissInstall();
             } else {
-                showToast('You can install anytime from the banner');
+                // User cancelled → hide banner for this session too
+                // (otherwise it stays forever, which is the bug you're seeing)
+                hideInstallBannerOnly();
             }
-            // The event can only be used once
+
             deferredInstallPrompt = null;
         });
         return;
@@ -3235,6 +3251,20 @@ function handleInstallClick() {
     showInstallInstructions('generic');
 }
 
+// Hide the banner for THIS session only (reappears on next app open)
+// Use this when user cancels — don't punish them forever, but stop nagging now.
+function hideInstallBannerOnly() {
+    var banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+// Hide the banner permanently (until they clear storage)
+// Use this when user explicitly dismisses with the × button.
+function dismissInstall() {
+    var banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem('nabzInstallDismissed', '1');
+}
 // ============================================================
 // PRETTY INSTALL INSTRUCTIONS MODAL (better than alert())
 // ============================================================
@@ -3304,9 +3334,15 @@ window.addEventListener('beforeinstallprompt', function(e) {
     // Save the event so we can call prompt() later
     deferredInstallPrompt = e;
 
-    // Now that we KNOW the browser can install, show our banner
-    if (!isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
-        setTimeout(showInstallBanner, 1200);
+    // Only show the banner if the user hasn't dismissed it AND
+    // hasn't already been shown the banner this session
+    if (!isStandalone() &&
+        localStorage.getItem('nabzInstallDismissed') !== '1' &&
+        sessionStorage.getItem('nabzInstallBannerShownThisSession') !== '1') {
+        setTimeout(function() {
+            showInstallBanner();
+            sessionStorage.setItem('nabzInstallBannerShownThisSession', '1');
+        }, 1200);
     }
 });
 
@@ -3319,9 +3355,14 @@ window.addEventListener('appinstalled', function() {
 // The button will do the right thing per platform:
 //   - Chrome/Edge/Samsung on Android: triggers the real system install dialog
 //   - iOS Safari / Firefox: shows step-by-step instructions
-if (!isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
-    setTimeout(showInstallBanner, 2500);
-}
+if (!isStandalone() &&
+    localStorage.getItem('nabzInstallDismissed') !== '1' &&
+    sessionStorage.getItem('nabzInstallBannerShownThisSession') !== '1') {
+    setTimeout(function() {
+        showInstallBanner();
+        sessionStorage.setItem('nabzInstallBannerShownThisSession', '1');
+    }, 2500);
+    }
 // ============================================================
 // REMEMBER LAST COUNTRY CODE
 // ============================================================
