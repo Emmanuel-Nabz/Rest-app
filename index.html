@@ -3174,7 +3174,13 @@ function isIOS() {
 function isFirefox() {
     return /firefox/i.test(navigator.userAgent) && !/seamonkey/i.test(navigator.userAgent);
 }
-
+// Browsers that CANNOT trigger a native install prompt
+function browserSupportsInstallPrompt() {
+    // iOS Safari, Firefox, and anything that isn't Chromium-based
+    if (isIOS() || isFirefox()) return false;
+    // Everything else (Chrome, Edge, Samsung Internet) — assume yes
+    return true;
+}
 function showInstallBanner() {
     if (isStandalone()) return;
     if (localStorage.getItem('nabzInstallDismissed') === '1') return;
@@ -3185,8 +3191,18 @@ function showInstallBanner() {
 
     // Adjust the button label based on the browser
     var btn = document.getElementById('installBtn');
-    if (btn && isFirefox()) {
+    if (!btn) return;
+
+    if (isFirefox()) {
         btn.textContent = 'How to add';
+    } else if (isIOS()) {
+        btn.textContent = 'How to add';
+    } else if (deferredInstallPrompt) {
+        btn.textContent = 'Install';
+    } else {
+        // Chromium browser but event hasn't fired yet — button still says Install
+        // but the click handler will handle gracefully
+        btn.textContent = 'Install';
     }
 }
 
@@ -3197,39 +3213,76 @@ function dismissInstall() {
 }
 
 function handleInstallClick() {
-    // Android/Chrome — native prompt is available
+    // ─── Case 1: Native Chrome/Edge/Android prompt available ───
     if (deferredInstallPrompt) {
         deferredInstallPrompt.prompt();
+
         deferredInstallPrompt.userChoice.then(function(choice) {
+            console.log('Install choice:', choice.outcome);
+
             if (choice.outcome === 'accepted') {
-                console.log('>>> installed');
+                // User tapped "Install" in the system dialog
+                dismissInstall();
+            } else {
+                // User tapped "Cancel" — keep the banner so they can retry
+                showToast('You can install anytime from the banner');
             }
+
+            // The event can only be used once
             deferredInstallPrompt = null;
-            dismissInstall();
         });
-        return;
+
+        return; // ← do NOT fall through to instructions
     }
 
-    // iOS — no native prompt; show instructions
+    // ─── Case 2: iOS Safari (no API — instructions required) ───
     if (isIOS()) {
-        alert('To install:\n\n1. Tap the Share button (□↑) at the bottom of Safari\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"');
+        alert(
+            'To install:\n\n' +
+            '1. Tap the Share button (□↑) at the bottom of Safari\n' +
+            '2. Scroll down and tap "Add to Home Screen"\n' +
+            '3. Tap "Add"'
+        );
         return;
     }
 
-    // Firefox — no native prompt
+    // ─── Case 3: Firefox Android (no API — instructions required) ───
     if (isFirefox()) {
-        alert('To add to your home screen:\n\n1. Tap the ⋮ menu in Firefox\n2. Tap "Add app to Home screen"\n3. Tap "Add"');
+        alert(
+            'To add to your home screen:\n\n' +
+            '1. Tap the ⋮ menu in Firefox\n' +
+            '2. Tap "Add app to Home screen"\n' +
+            '3. Tap "Add"'
+        );
         return;
     }
 
-    // Generic fallback
-    alert('Open your browser menu and choose "Install app" or "Add to Home Screen".');
+    // ─── Case 4: Unknown browser, no native prompt available ───
+    // This only runs if the banner is showing but install isn't actually possible.
+    // In that case, just hide the banner since it's useless.
+    dismissInstall();
+    showToast('Your browser doesn\'t support one-tap install');
 }
 
 window.addEventListener('beforeinstallprompt', function(e) {
+    console.log('✅ beforeinstallprompt fired — install is available');
+
+    // Prevent Chrome's own mini-infobar
     e.preventDefault();
+
+    // Save the event so we can call prompt() later
     deferredInstallPrompt = e;
-    setTimeout(showInstallBanner, 1500);
+
+    // Now that we KNOW the browser can install, show our banner
+    if (!isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
+        setTimeout(showInstallBanner, 1200);
+    }
+});
+
+// If the browser can't install (PWA criteria not met), don't show the banner at all
+window.addEventListener('appinstalled', function() {
+    console.log('✅ App installed');
+    dismissInstall();
 });
 
 window.addEventListener('appinstalled', function() {
@@ -3237,15 +3290,14 @@ window.addEventListener('appinstalled', function() {
     console.log('>>> app installed');
 });
 
+// Only auto-show the banner on iOS (which has no native prompt API)
+// or after we've actually received the deferredInstallPrompt event.
 if (isIOS() && !isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
     setTimeout(showInstallBanner, 2500);
 }
 
-setTimeout(function() {
-    if (!isStandalone() && localStorage.getItem('nabzInstallDismissed') !== '1') {
-        showInstallBanner();
-    }
-}, 3000);
+// NOTE: Do NOT auto-show on Android/Chrome. Wait for beforeinstallprompt.
+// The banner appears inside that event handler instead.
 // ============================================================
 // REMEMBER LAST COUNTRY CODE
 // ============================================================
