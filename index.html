@@ -3287,13 +3287,6 @@ function handleInstallClick() {
     // ─── Case 4: Any other browser — generic instructions ───
     showInstallInstructions('generic');
 }
-
-// Hide the banner for THIS session only (reappears on next app open)
-// Use this when user cancels — don't punish them forever, but stop nagging now.
-function hideInstallBannerOnly() {
-    var banner = document.getElementById('installBanner');
-    if (banner) banner.style.display = 'none';
-}
 // ============================================================
 // ATTACH INSTALL BANNER CLOSE BUTTON (×)
 // ============================================================
