@@ -1221,6 +1221,32 @@
 // ============================================================
 var API = 'https://api.nabztech.com/api';
 var APP_VERSION = '1.0.0';   // bump this when you deploy a new customer app build
+// ============================================================
+// STANDALONE DETECTION — runs FIRST before anything else
+// ============================================================
+var IS_STANDALONE = (function() {
+    try {
+        if (window.matchMedia('(display-mode: standalone)').matches) return true;
+        if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if (window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+        if (window.navigator.standalone === true) return true;
+    } catch (e) {}
+    return false;
+})();
+
+console.log('📱 Standalone mode?', IS_STANDALONE);
+
+// If we're in standalone mode, hide the install banner IMMEDIATELY
+// (before it even renders)
+if (IS_STANDALONE) {
+    document.addEventListener('DOMContentLoaded', function() {
+        var banner = document.getElementById('installBanner');
+        if (banner) {
+            banner.style.display = 'none';
+            banner.remove();  // remove from DOM entirely
+        }
+    });
+}
 
 // Bahrain demo has no restaurant scoping — subdomain is always nabztech.com
 function withRestaurant(url) { return url; }
@@ -3160,12 +3186,18 @@ document.addEventListener('visibilitychange', function() {
 // ADD TO HOME SCREEN
 // ============================================================
 var deferredInstallPrompt = null;
-
 function isStandalone() {
-    return window.matchMedia('(display-mode: standalone)').matches
-        || window.navigator.standalone === true;
+    // Three independent checks — if ANY is true, we're in standalone mode
+    try {
+        if (window.matchMedia('(display-mode: standalone)').matches) return true;
+        if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if (window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+        if (window.navigator.standalone === true) return true;
+        // iOS Safari specific
+        if (window.navigator.standalone === 'true') return true;
+    } catch (e) {}
+    return false;
 }
-
 function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent)
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -3182,36 +3214,41 @@ function browserSupportsInstallPrompt() {
     return true;
 }
 function showInstallBanner() {
+    // Triple check — never show in standalone mode
+    if (IS_STANDALONE) return;
     if (isStandalone()) return;
     if (localStorage.getItem('nabzInstallDismissed') === '1') return;
 
     var banner = document.getElementById('installBanner');
     if (!banner) return;
 
-    // Always use the same label — the click handler decides what happens
+    // Also: if the banner was removed from DOM (standalone), bail out
+    if (!document.body.contains(banner)) return;
+
     var btn = document.getElementById('installBtn');
     if (btn) btn.textContent = 'Install';
 
     banner.style.display = 'flex';
 }
-
 function dismissInstall() {
+    console.log('🚫 dismissInstall() called');
     var banner = document.getElementById('installBanner');
-    if (banner) {
-        // Hide with animation, then remove from DOM
-        banner.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-        banner.style.transform = 'translateY(100%)';
-        banner.style.opacity = '0';
+    if (!banner) return;
 
-        setTimeout(function() {
-            banner.style.display = 'none';
-            banner.style.transform = '';
-            banner.style.opacity = '';
-        }, 260);
-    }
+    // Immediate hide — no animation (fixes standalone viewport glitches)
+    banner.style.display = 'none';
+
+    // Also remove from DOM to prevent any residual rendering issues
+    setTimeout(function() {
+        if (banner.parentNode) {
+            banner.remove();
+        }
+    }, 50);
+
     localStorage.setItem('nabzInstallDismissed', '1');
-    console.log('✅ Install banner dismissed permanently');
+    console.log('✅ Banner dismissed permanently');
 }
+
 function handleInstallClick() {
     // ─── Case 1: Chrome / Edge / Samsung — real install prompt available ───
     if (deferredInstallPrompt) {
@@ -3257,14 +3294,49 @@ function hideInstallBannerOnly() {
     var banner = document.getElementById('installBanner');
     if (banner) banner.style.display = 'none';
 }
+// ============================================================
+// ATTACH INSTALL BANNER CLOSE BUTTON (×)
+// ============================================================
+function attachInstallCloseButton() {
+    var btn = document.getElementById('installCloseBtn');
+    if (!btn) {
+        console.warn('⚠️ installCloseBtn not found');
+        return;
+    }
+    if (btn.dataset.handlerAttached === '1') return;
+    btn.dataset.handlerAttached = '1';
 
-// Hide the banner permanently (until they clear storage)
-// Use this when user explicitly dismisses with the × button.
-function dismissInstall() {
-    var banner = document.getElementById('installBanner');
-    if (banner) banner.style.display = 'none';
-    localStorage.setItem('nabzInstallDismissed', '1');
+    function onDismiss(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        console.log('🚫 × button tapped');
+        var banner = document.getElementById('installBanner');
+        if (banner) banner.style.display = 'none';
+        localStorage.setItem('nabzInstallDismissed', '1');
+        sessionStorage.setItem('nabzInstallBannerShownThisSession', '1');
+        console.log('✅ Banner hidden');
+    }
+
+    btn.addEventListener('click', onDismiss);
+    btn.addEventListener('touchend', onDismiss, { passive: false });
+
+    console.log('✅ Install close button attached');
 }
+
+// Run it as soon as the DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachInstallCloseButton);
+} else {
+    attachInstallCloseButton();
+}
+
+// Belt-and-suspenders: try again shortly after load in case the banner
+// was rendered late or the button wasn't in the DOM yet
+setTimeout(attachInstallCloseButton, 500);
+setTimeout(attachInstallCloseButton, 1500);
+setTimeout(attachInstallCloseButton, 3000);
 // ============================================================
 // PRETTY INSTALL INSTRUCTIONS MODAL (better than alert())
 // ============================================================
