@@ -1778,12 +1778,15 @@ function customerLogin() {
             if (!response.ok) throw new Error('Server error ' + response.status);
             return response.json();
         })
-        .then(function(customer) {
+                .then(function(customer) {
             if (!customer) return;
-                        localStorage.setItem('nabzCurrentCustomer', JSON.stringify(customer));
-            localStorage.setItem('nabzLastPhone', customer.phone);
+            localStorage.setItem('harvestCurrentCustomer', JSON.stringify(customer));
+            localStorage.setItem('harvestLastPhone', customer.phone);
             showCustomerWelcome(customer);
             prefillCustomerDetails(customer);
+
+            // ⚡ Re-check first-order status
+            checkFirstOrderStatus();
 
             if (pendingCheckout) {
                 pendingCheckout = false;
@@ -1819,13 +1822,16 @@ function customerRegister() {
         body: JSON.stringify({ name: name, phone: phone, address: address })
     })
     .then(function(response) { return response.json(); })
-    .then(function(data) {
+        .then(function(data) {
         if (data.error) { errorEl.textContent = '❌ ' + data.error; return; }
         var customer = { name: name, phone: phone, address: address };
-                localStorage.setItem('nabzCurrentCustomer', JSON.stringify(customer));
-        localStorage.setItem('nabzLastPhone', phone);
+        localStorage.setItem('harvestCurrentCustomer', JSON.stringify(customer));
+        localStorage.setItem('harvestLastPhone', phone);
         showCustomerWelcome(customer);
         prefillCustomerDetails(customer);
+
+        // ⚡ Re-check first-order status now that we know who they are
+        checkFirstOrderStatus();
 
         if (pendingCheckout) {
             pendingCheckout = false;
@@ -1845,8 +1851,12 @@ function showCustomerWelcome(customer) {
     document.getElementById('customerLoginSection').style.display = 'none';
     document.getElementById('customerWelcome').style.display = 'flex';
     document.getElementById('welcomeName').textContent = '👤 ' + customer.name;
-}
 
+    // Re-check first-order status now that we know the phone
+    if (customer && customer.phone) {
+        checkFirstOrderStatus();
+    }
+}
 function prefillCustomerDetails(customer) {
     document.getElementById('customerName').value = customer.name;
     document.getElementById('customerPhone').value = customer.phone;
