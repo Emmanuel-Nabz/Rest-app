@@ -934,14 +934,14 @@
 </head>
 <body>
 <!-- ===== ADD TO HOME SCREEN BANNER ===== -->
-<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e1e1e;border-top:3px solid #e67e22;padding:16px 18px;z-index:999998;box-shadow:0 -8px 25px rgba(0,0,0,0.5);align-items:center;gap:12px;"></div>
+<div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1e1e1e;border-top:3px solid #e67e22;padding:16px 18px;z-index:999998;box-shadow:0 -8px 25px rgba(0,0,0,0.5);align-items:center;gap:12px;overflow:visible;">
     <img id="installIcon" src="icon-192.png" alt="" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;background:#e67e22;">
     <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:0.95em;color:#fff;margin-bottom:2px;">Install Nabz-Eats</div>
         <div id="installText" style="font-size:0.8em;color:#95a5a6;line-height:1.3;">Add to your home screen for quick access</div>
     </div>
-    <button id="installBtn" onclick="handleInstallClick()" style="background:#e67e22;color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:700;font-size:0.85em;cursor:pointer;white-space:nowrap;">Install</button>
-    <button onclick="dismissInstall()" style="background:transparent;color:#7f8c8d;border:none;font-size:1.3em;cursor:pointer;padding:4px 8px;line-height:1;">&times;</button>
+    <button id="installBtn" type="button" onclick="handleInstallClick()" style="background:#e67e22;color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:700;font-size:0.85em;cursor:pointer;white-space:nowrap;flex-shrink:0;">Install</button>
+    <button id="installCloseBtn" type="button" aria-label="Dismiss install banner" style="background:transparent;color:#7f8c8d;border:none;font-size:1.5em;cursor:pointer;padding:8px 14px;line-height:1;position:relative;z-index:10000;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;pointer-events:auto;flex-shrink:0;">&times;</button>
 </div>
 <!-- ===== WELCOME BANNER ===== -->
 <div id="customerWelcome">
