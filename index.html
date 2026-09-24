@@ -3469,6 +3469,12 @@ if ('serviceWorker' in navigator) {
         });
     });
 }
+// ============================================================
+// VERSION CHECK — runs once on load
+// ============================================================
+setTimeout(function() {
+    checkAppVersion();
+}, 2000);
 </script>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQJlGOj-bHTmrw88BV6jXH-ZDA3sOx4x4&libraries=places&callback=initAutocomplete" async defer></script>
