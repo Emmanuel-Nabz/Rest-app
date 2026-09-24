@@ -859,7 +859,7 @@
 #floatingCart:hover { background: #d35400; transform: translateY(-2px); }
 #floatingCart:active { transform: translateY(0); }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp {
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
@@ -868,6 +868,67 @@
             0% { transform: scale(0.85); opacity: 0; }
             70% { transform: scale(1.02); }
             100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== FLY-TO-CART ANIMATION ===== */
+        .fly-item {
+            position: fixed;
+            z-index: 999999;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            background-color: #f39c12;
+            box-shadow: 0 8px 25px rgba(243,156,18,0.6);
+            pointer-events: none;
+            transition: transform 0.75s cubic-bezier(0.4, -0.2, 0.7, 1),
+                        opacity 0.75s ease-in;
+            will-change: transform, opacity;
+            border: 3px solid #fff;
+        }
+        @keyframes cartPulse {
+            0%   { transform: scale(1);   }
+            30%  { transform: scale(1.35); }
+            60%  { transform: scale(0.92); }
+            100% { transform: scale(1);   }
+        }
+        .cart-pulse {
+            animation: cartPulse 0.5s ease;
+        }
+        .fly-plus-one {
+            position: fixed;
+            z-index: 999999;
+            font-weight: 800;
+            font-size: 1.2em;
+            color: #27ae60;
+            pointer-events: none;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            animation: flyUp 0.9s ease-out forwards;
+        }
+        @keyframes flyUp {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.4); }
+        }
+        .bounce-on-add {
+            animation: bounceOnAdd 0.3s ease;
+        }
+        @keyframes bounceOnAdd {
+            0%   { transform: scale(1);    }
+            50%  { transform: scale(1.05); }
+            100% { transform: scale(1);    }
+        }
+
+        /* ===== ORDER AGAIN BUTTON ===== */
+        .reorder-btn {
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .reorder-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(39,174,96,0.5) !important;
+        }
+        .reorder-btn:active {
+            transform: translateY(0) scale(0.97);
         }
     </style>
 </head>
@@ -1179,13 +1240,6 @@ var menuCategories = [];
 var trackingInterval = null;
 var currentTrackingOrderId = null;
 var pendingCheckout = false;
-// Bahrain demo doesn't need restaurant scoping — the subdomain is always nabztech.com
-function withRestaurant(url) { return url; }
-
-// Bahrain uses BD with 3 decimals
-function formatMoney(amount) {
-    return 'BD ' + (parseFloat(amount) || 0).toFixed(3);
-}
 // ============================================================
 // PASSWORD EYE TOGGLE
 // ============================================================
@@ -1403,10 +1457,10 @@ function renderCart() {
 
     var html = '';
     var subtotal = 0;
-    cart.forEach(function(item) {
+        cart.forEach(function(item) {
         var itemTotal = item.price * item.quantity;
         subtotal += itemTotal;
-        html += '<div class="cart-item">' +
+        html += '<div class="cart-item" data-item-id="' + item.id + '">' +
            '<span class="item-name">' + escapeHtml(item.name) + '</span>' +
             '<div style="display: flex; align-items: center; gap: 8px;">' +
                 '<button class="qty-btn minus-btn" onclick="updateCartQuantity(' + item.id + ', -1)">−</button>' +
@@ -1666,7 +1720,6 @@ function updateQuantity(id, change) {
     } else {
         cart.push({ id: item.id, name: item.name, price: item.price, quantity: 1 });
     }
-
     var qtyDisplay = document.getElementById('qty-' + id);
     var minusBtn = document.querySelector('#item-' + id + ' .minus-btn');
     if (qtyDisplay) {
@@ -1676,7 +1729,24 @@ function updateQuantity(id, change) {
     if (minusBtn) {
         minusBtn.style.display = newQuantity > 0 ? 'inline-flex' : 'none';
     }
-        saveCart();
+
+    // ⚡ Fly-to-cart animation
+    if (change > 0) {
+        var menuCard = document.getElementById('item-' + id);
+        if (menuCard) {
+            menuCard.classList.remove('bounce-on-add');
+            void menuCard.offsetWidth;
+            menuCard.classList.add('bounce-on-add');
+            setTimeout(function() { menuCard.classList.remove('bounce-on-add'); }, 350);
+
+            var addBtn = menuCard.querySelector('.add-btn-qty');
+            var imgEl = menuCard.querySelector('.item-image');
+            var sourceEl = addBtn || imgEl || menuCard;
+            flyToCart(sourceEl, imgEl ? imgEl.src : null);
+        }
+    }
+
+    saveCart();
     renderCart();
 
     // Upsell logic — suggest a drink when adding a main item
@@ -1737,6 +1807,16 @@ function updateCartQuantity(id, change) {
         cart = cart.filter(function(i) { return i.id !== id; });
     } else {
         item.quantity = newQuantity;
+    }
+
+    // ⚡ Animation when adding from the cart page
+    if (change > 0) {
+        var cartItemEl = document.querySelector('.cart-item[data-item-id="' + id + '"]');
+        if (cartItemEl) {
+            var img = cartItemEl.querySelector('.cart-item-img');
+            var sourceEl = cartItemEl.querySelector('.add-btn-qty') || cartItemEl;
+            flyToCart(sourceEl, img ? img.src : null);
+        }
     }
 
     var qtyDisplay = document.getElementById('qty-' + id);
@@ -2547,36 +2627,68 @@ function showOrderHistory() {
         '</div>' +
         '<div style="overflow-y:auto;padding:15px;">';
 
-    orders.slice(0, 20).forEach(function(order) {
+       orders.slice(0, 20).forEach(function(order, i) {
         var date = order.date || 'Unknown date';
-        var total = (order.total || 0).toFixed(2);
+        var total = 'BD ' + (order.total || 0).toFixed(3);
+        var itemCount = (order.items || []).reduce(function(sum, it) {
+            return sum + (parseInt(it.quantity) || 0);
+        }, 0);
+
         var statusColor = {
             'New': '#3498db', 'Confirmed': '#27ae60', 'Preparing': '#f39c12',
             'On the Way': '#9b59b6', 'Delivered': '#2ecc71', 'Cancelled': '#e74c3c'
         }[order.status] || '#7f8c8d';
 
-        html += '<div style="background:#f8f9fa;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid ' + statusColor + ';">' +
+        var itemPreview = (order.items || []).slice(0, 3).map(function(it) {
+            return it.quantity + '× ' + escapeHtml(it.name);
+        }).join(' · ');
+        if ((order.items || []).length > 3) {
+            itemPreview += ' +' + (order.items.length - 3) + ' more';
+        }
+
+        var showReorder = order.status !== 'Cancelled';
+
+        html += '<div style="background:#ffffff;border-radius:14px;padding:16px;margin-bottom:12px;border-left:4px solid ' + statusColor + ';box-shadow:0 2px 10px rgba(0,0,0,0.06);">' +
+
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-                '<strong style="color:#2c3e50;">Order #' + (order.id || '—') + '</strong>' +
-                '<span style="background:' + statusColor + '20;color:' + statusColor + ';padding:3px 10px;border-radius:10px;font-size:0.75em;font-weight:600;">' + (order.status || 'New') + '</span>' +
+                '<strong style="color:#2c3e50;font-size:0.95em;">Order #' + (order.id || '—') + '</strong>' +
+                '<span style="background:' + statusColor + '20;color:' + statusColor + ';padding:3px 10px;border-radius:10px;font-size:0.72em;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;">' + (order.status || 'New') + '</span>' +
             '</div>' +
-            '<div style="font-size:0.8em;color:#7f8c8d;margin-bottom:8px;">' + date + '</div>' +
-            '<div style="font-size:0.85em;color:#555;margin-bottom:6px;">' +
-                (order.items || []).slice(0, 3).map(function(i) {
-                    return i.quantity + '× ' + i.name;
-                }).join(' · ') +
-                ((order.items || []).length > 3 ? ' +' + (order.items.length - 3) + ' more' : '') +
+
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78em;color:#95a5a6;margin-bottom:10px;">' +
+                '<span>' + date + '</span>' +
+                '<span>' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + '</span>' +
             '</div>' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
-                '<strong style="color:#27ae60;">BD ' + total + '</strong>' +
-                (order.status === 'Delivered' ? '<button onclick="reorder(' + JSON.stringify(order).replace(/"/g, '&quot;') + ')" style="background:#3498db;color:white;border:none;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;cursor:pointer;">🔁 Reorder</button>' : '') +
+
+            '<div style="font-size:0.86em;color:#4a5568;margin-bottom:12px;line-height:1.5;">' +
+                itemPreview +
+            '</div>' +
+
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+                '<div>' +
+                    '<div style="font-size:0.7em;color:#95a5a6;text-transform:uppercase;letter-spacing:0.05em;">Total</div>' +
+                    '<strong style="color:#27ae60;font-size:1.15em;">' + total + '</strong>' +
+                '</div>' +
+                (showReorder
+                    ? '<button class="reorder-btn" data-reorder-index="' + i + '" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:white;border:none;padding:10px 18px;border-radius:24px;font-size:0.88em;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(39,174,96,0.35);display:inline-flex;align-items:center;gap:6px;">' +
+                        '<i class="fas fa-redo"></i> Order Again' +
+                      '</button>'
+                    : '<span style="color:#95a5a6;font-size:0.82em;font-style:italic;">Cancelled</span>') +
             '</div>' +
         '</div>';
     });
-
     html += '</div></div>';
     overlay.innerHTML = html;
     document.body.appendChild(overlay);
+
+    // Attach reorder handlers safely (avoids quote-escaping issues)
+    overlay.querySelectorAll('.reorder-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var idx = parseInt(btn.getAttribute('data-reorder-index'), 10);
+            var allOrders = JSON.parse(localStorage.getItem('nabzOrders')) || [];
+            if (allOrders[idx]) reorder(allOrders[idx]);
+        });
+    });
 }
 // ============================================================
 // CLEAR ORDER HISTORY (local only)
@@ -2638,6 +2750,69 @@ function reorder(orderJson) {
         showToast('✅ Items added to cart');
         scrollToCart();
     });
+}
+// ============================================================
+// FLY-TO-CART ANIMATION
+// ============================================================
+function flyToCart(sourceEl, imageUrl) {
+    if (!sourceEl) return;
+
+    var cartTarget =
+        document.getElementById('navCartBadge') ||
+        document.querySelector('.bottom-nav .nav-item[onclick*="scrollToCart"] i') ||
+        document.getElementById('floatingCart');
+
+    if (!cartTarget) return;
+
+    var startRect = sourceEl.getBoundingClientRect();
+    var endRect = cartTarget.getBoundingClientRect();
+
+    var fly = document.createElement('div');
+    fly.className = 'fly-item';
+    if (imageUrl) fly.style.backgroundImage = 'url(' + imageUrl + ')';
+
+    fly.style.left = (startRect.left + startRect.width / 2 - 21) + 'px';
+    fly.style.top  = (startRect.top  + startRect.height / 2 - 21) + 'px';
+
+    document.body.appendChild(fly);
+
+    var plus = document.createElement('div');
+    plus.className = 'fly-plus-one';
+    plus.textContent = '+1';
+    plus.style.left = (startRect.left + startRect.width / 2 - 10) + 'px';
+    plus.style.top  = (startRect.top  + startRect.height / 2 - 20) + 'px';
+    document.body.appendChild(plus);
+    setTimeout(function() { plus.remove(); }, 900);
+
+    void fly.offsetWidth;
+
+    var deltaX = (endRect.left + endRect.width / 2 - 21) - (startRect.left + startRect.width / 2 - 21);
+    var deltaY = (endRect.top  + endRect.height / 2 - 21) - (startRect.top  + startRect.height / 2 - 21);
+
+    fly.style.transform = 'translate(' + deltaX + 'px, ' + deltaY + 'px) scale(0.35)';
+    fly.style.opacity = '0.3';
+
+    setTimeout(function() {
+        fly.remove();
+        pulseCart();
+    }, 780);
+}
+
+function pulseCart() {
+    var targets = [
+        document.getElementById('navCartBadge'),
+        document.getElementById('floatingCart'),
+        document.getElementById('cartBadge')
+    ].filter(Boolean);
+
+    targets.forEach(function(el) {
+        el.classList.remove('cart-pulse');
+        void el.offsetWidth;
+        el.classList.add('cart-pulse');
+        setTimeout(function() { el.classList.remove('cart-pulse'); }, 600);
+    });
+
+    if (navigator.vibrate) navigator.vibrate(30);
 }
 
 function showToast(msg, type) {
@@ -2762,52 +2937,39 @@ function repeatLastOrder() {
     var last = orders[0];
     if (!last.items || last.items.length === 0) return;
 
-    // Check current cart is empty first
-    if (cart.length > 0) {
-      showConfirm({
-    title: 'Replace your cart?',
-    message: 'Your cart has items. They will be cleared and replaced with your last order.',
-    iconClass: 'fa-redo',
-    iconVariant: 'neutral',
-    confirmStyle: 'primary',
-    confirmText: 'Replace',
-    cancelText: 'Keep Current'
-}).then(function(confirmed) {
-    if (!confirmed) return;
-    cart = [];
-    last.items.forEach(function(item) {
-        cart.push({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity
-        });
-    });
-    saveCart();
-    renderCart();
-    showToast('✅ ' + last.items.length + ' item(s) added to cart');
-    document.getElementById('repeatOrderBanner').style.display = 'none';
-    setTimeout(scrollToCart, 300);
-});
+    function addItems() {
         cart = [];
+        last.items.forEach(function(item) {
+            cart.push({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity
+            });
+        });
+        saveCart();
+        renderCart();
+        showToast('✅ ' + last.items.length + ' item(s) added to cart');
+        var banner = document.getElementById('repeatOrderBanner');
+        if (banner) banner.style.display = 'none';
+        setTimeout(scrollToCart, 300);
     }
 
-    last.items.forEach(function(item) {
-        cart.push({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity
+    if (cart.length > 0) {
+        showConfirm({
+            title: 'Replace your cart?',
+            message: 'Your cart has items. They will be cleared and replaced with your last order.',
+            iconClass: 'fa-redo',
+            iconVariant: 'neutral',
+            confirmStyle: 'primary',
+            confirmText: 'Replace',
+            cancelText: 'Keep Current'
+        }).then(function(confirmed) {
+            if (confirmed) addItems();
         });
-    });
-
-    saveCart();
-    renderCart();
-    showToast('✅ ' + last.items.length + ' item(s) added to cart');
-
-    // Hide the banner and scroll to cart
-    document.getElementById('repeatOrderBanner').style.display = 'none';
-    setTimeout(scrollToCart, 300);
+    } else {
+        addItems();
+    }
 }
 
 // ============================================================
