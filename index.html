@@ -1993,49 +1993,118 @@ function removeDiscount() {
 // CHECKOUT / VERIFICATION
 // ============================================================
 function checkout() {
-    var customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
-    if (!customer) {
-        pendingCheckout = true;
-        var section = document.getElementById('customerLoginSection');
-        section.style.display = 'block';
-        document.getElementById('loginPrompt').style.display = 'block';
-        document.getElementById('customerLoginForm').style.display = 'none';
-        document.getElementById('customerRegisterForm').style.display = 'none';
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-    }
-
-      if (cart.length === 0) {
+    // 1) Basic cart checks
+    if (cart.length === 0) {
         showToast('🛒 Your cart is empty — add some items first');
         return;
     }
 
     var currentSubtotal = 0;
     cart.forEach(function(i) { currentSubtotal += i.price * i.quantity; });
-     if (currentSubtotal < MIN_ORDER) {
-        showToast('⚠️ Minimum order is BD ' + MIN_ORDER.toFixed(2) + ' — add BD ' + (MIN_ORDER - currentSubtotal).toFixed(2) + ' more');
+    if (currentSubtotal < MIN_ORDER) {
+        showToast('⚠️ Minimum order is ' + formatMoney(MIN_ORDER) + ' — add ' + formatMoney(MIN_ORDER - currentSubtotal) + ' more');
         return;
     }
 
+    // 2) Read the details from the checkout form
     var name = document.getElementById('customerName').value.trim();
     var countryCodeElement = document.getElementById('countryCode');
-    var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
+    var countryCode = countryCodeElement ? countryCodeElement.value : '+256';
     var phoneNumber = document.getElementById('customerPhone').value.trim();
     var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
 
-    // Normalize phone to +CCXXXXXXXX format
     var phone = normalizePhone(phoneNumber, countryCode);
     console.log('📱 Checkout phone:', phoneNumber, '+', countryCode, '→', phone);
 
-        if (!name) { showToast('👤 Please enter your full name'); return; }
-        if (!phoneNumber) { showToast('📱 Please enter your phone number'); return; }
-        if (!address) { showToast('📍 Please enter your delivery address'); return; }
+    if (!name) { showToast('👤 Please enter your full name'); return; }
+    if (!phoneNumber) { showToast('📱 Please enter your phone number'); return; }
+    if (!address) { showToast('📍 Please enter your delivery address'); return; }
 
-    // Show the confirmation popup
-    showPhoneConfirmation(name, phone, address, payment);
+    // 3) Are they already logged in?
+    var customer = null;
+    try {
+        customer = JSON.parse(localStorage.getItem('harvestCurrentCustomer'));
+    } catch (e) {}
+
+    if (customer) {
+        // Already logged in — proceed normally
+        showPhoneConfirmation(name, phone, address, payment);
+        return;
+    }
+
+    // 4) Not logged in — auto-register with the details they just typed
+    //    Show a brief loading state, POST to /customers, then continue.
+    var btn = document.querySelector('.checkout-cta');
+    var originalBtnHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating your account…';
+    }
+
+    fetch(withRestaurant(API + '/customers'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, phone: phone, address: address })
+    })
+    .then(function(res) {
+        return res.json().then(function(d) { return { ok: res.ok, status: res.status, data: d }; });
+    })
+    .then(function(result) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
+
+        // If the phone is already registered (409 or "already registered"),
+        // treat it as a login: fetch the existing customer and continue.
+        var alreadyExists = false;
+        if (result.status === 400 && result.data && result.data.error &&
+            result.data.error.toLowerCase().indexOf('already') !== -1) {
+            alreadyExists = true;
+        }
+
+        if (!result.ok && !alreadyExists) {
+            showToast('❌ ' + ((result.data && result.data.error) || 'Could not save your details'));
+            return;
+        }
+
+        // If already existed → look them up to get the proper customer record
+        var finishFlow = function(cust) {
+            localStorage.setItem('harvestCurrentCustomer', JSON.stringify(cust));
+            localStorage.setItem('harvestLastPhone', cust.phone || phone);
+            showCustomerWelcome(cust);
+            prefillCustomerDetails(cust);
+            showPhoneConfirmation(name, phone, address, payment);
+        };
+
+        if (alreadyExists) {
+            fetch(withRestaurant(API + '/customers/lookup?phone=' + encodeURIComponent(phone)))
+                .then(function(r) { return r.json(); })
+                .then(function(existing) {
+                    if (existing && !existing.error) {
+                        finishFlow(existing);
+                    } else {
+                        // Fallback — use what they typed
+                        finishFlow({ name: name, phone: phone, address: address });
+                    }
+                })
+                .catch(function() {
+                    finishFlow({ name: name, phone: phone, address: address });
+                });
+        } else {
+            finishFlow({ name: name, phone: phone, address: address });
+        }
+    })
+    .catch(function(err) {
+        console.error('Auto-register error:', err);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
+        showToast('❌ Network error — please try again');
+    });
 }
-
 // ============================================================
 // PHONE CONFIRMATION (replaces the old OTP flow)
 // ============================================================
