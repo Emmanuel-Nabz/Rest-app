@@ -1160,6 +1160,15 @@
 // ============================================================
 var API = 'https://api.nabztech.com/api';
 var APP_VERSION = '1.0.0';   // bump this when you deploy a new customer app build
+
+// Bahrain demo has no restaurant scoping — subdomain is always nabztech.com
+function withRestaurant(url) { return url; }
+
+// Bahrain uses BD with 3 decimals
+function formatMoney(amount) {
+    return 'BD ' + (parseFloat(amount) || 0).toFixed(3);
+}
+
 var DELIVERY_FEE = 0.500;
 var MIN_ORDER = 3.000;
 var FREE_FIRST_DELIVERY = true;   // set to false to disable
@@ -1170,6 +1179,13 @@ var menuCategories = [];
 var trackingInterval = null;
 var currentTrackingOrderId = null;
 var pendingCheckout = false;
+// Bahrain demo doesn't need restaurant scoping — the subdomain is always nabztech.com
+function withRestaurant(url) { return url; }
+
+// Bahrain uses BD with 3 decimals
+function formatMoney(amount) {
+    return 'BD ' + (parseFloat(amount) || 0).toFixed(3);
+}
 // ============================================================
 // PASSWORD EYE TOGGLE
 // ============================================================
@@ -1780,8 +1796,8 @@ function customerLogin() {
         })
                 .then(function(customer) {
             if (!customer) return;
-            localStorage.setItem('harvestCurrentCustomer', JSON.stringify(customer));
-            localStorage.setItem('harvestLastPhone', customer.phone);
+            localStorage.setItem('nabzCurrentCustomer', JSON.stringify(customer));
+            localStorage.setItem('nabzLastPhone', customer.phone);
             showCustomerWelcome(customer);
             prefillCustomerDetails(customer);
 
@@ -1825,8 +1841,8 @@ function customerRegister() {
         .then(function(data) {
         if (data.error) { errorEl.textContent = '❌ ' + data.error; return; }
         var customer = { name: name, phone: phone, address: address };
-        localStorage.setItem('harvestCurrentCustomer', JSON.stringify(customer));
-        localStorage.setItem('harvestLastPhone', phone);
+        localStorage.setItem('nabzCurrentCustomer', JSON.stringify(customer));
+        localStorage.setItem('nabzLastPhone', phone);
         showCustomerWelcome(customer);
         prefillCustomerDetails(customer);
 
@@ -2003,7 +2019,18 @@ function removeDiscount() {
 // CHECKOUT / VERIFICATION
 // ============================================================
 function checkout() {
-    // 1) Basic cart checks
+    var customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
+    if (!customer) {
+        pendingCheckout = true;
+        var section = document.getElementById('customerLoginSection');
+        section.style.display = 'block';
+        document.getElementById('loginPrompt').style.display = 'block';
+        document.getElementById('customerLoginForm').style.display = 'none';
+        document.getElementById('customerRegisterForm').style.display = 'none';
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
+
     if (cart.length === 0) {
         showToast('🛒 Your cart is empty — add some items first');
         return;
@@ -2012,14 +2039,14 @@ function checkout() {
     var currentSubtotal = 0;
     cart.forEach(function(i) { currentSubtotal += i.price * i.quantity; });
     if (currentSubtotal < MIN_ORDER) {
-        showToast('⚠️ Minimum order is ' + formatMoney(MIN_ORDER) + ' — add ' + formatMoney(MIN_ORDER - currentSubtotal) + ' more');
+        var remaining = (MIN_ORDER - currentSubtotal).toFixed(2);
+        showToast('⚠️ Minimum order is BD ' + MIN_ORDER.toFixed(2) + ' — add BD ' + remaining + ' more');
         return;
     }
 
-    // 2) Read the details from the checkout form
     var name = document.getElementById('customerName').value.trim();
     var countryCodeElement = document.getElementById('countryCode');
-    var countryCode = countryCodeElement ? countryCodeElement.value : '+256';
+    var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
     var phoneNumber = document.getElementById('customerPhone').value.trim();
     var address = document.getElementById('deliveryAddress').value.trim();
     var payment = document.getElementById('paymentMethod').value;
@@ -2031,89 +2058,7 @@ function checkout() {
     if (!phoneNumber) { showToast('📱 Please enter your phone number'); return; }
     if (!address) { showToast('📍 Please enter your delivery address'); return; }
 
-    // 3) Are they already logged in?
-    var customer = null;
-    try {
-        customer = JSON.parse(localStorage.getItem('harvestCurrentCustomer'));
-    } catch (e) {}
-
-    if (customer) {
-        // Already logged in — proceed normally
-        showPhoneConfirmation(name, phone, address, payment);
-        return;
-    }
-
-    // 4) Not logged in — auto-register with the details they just typed
-    //    Show a brief loading state, POST to /customers, then continue.
-    var btn = document.querySelector('.checkout-cta');
-    var originalBtnHtml = btn ? btn.innerHTML : '';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating your account…';
-    }
-
-    fetch(withRestaurant(API + '/customers'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, phone: phone, address: address })
-    })
-    .then(function(res) {
-        return res.json().then(function(d) { return { ok: res.ok, status: res.status, data: d }; });
-    })
-    .then(function(result) {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalBtnHtml;
-        }
-
-        // If the phone is already registered (409 or "already registered"),
-        // treat it as a login: fetch the existing customer and continue.
-        var alreadyExists = false;
-        if (result.status === 400 && result.data && result.data.error &&
-            result.data.error.toLowerCase().indexOf('already') !== -1) {
-            alreadyExists = true;
-        }
-
-        if (!result.ok && !alreadyExists) {
-            showToast('❌ ' + ((result.data && result.data.error) || 'Could not save your details'));
-            return;
-        }
-
-        // If already existed → look them up to get the proper customer record
-        var finishFlow = function(cust) {
-            localStorage.setItem('harvestCurrentCustomer', JSON.stringify(cust));
-            localStorage.setItem('harvestLastPhone', cust.phone || phone);
-            showCustomerWelcome(cust);
-            prefillCustomerDetails(cust);
-            showPhoneConfirmation(name, phone, address, payment);
-        };
-
-        if (alreadyExists) {
-            fetch(withRestaurant(API + '/customers/lookup?phone=' + encodeURIComponent(phone)))
-                .then(function(r) { return r.json(); })
-                .then(function(existing) {
-                    if (existing && !existing.error) {
-                        finishFlow(existing);
-                    } else {
-                        // Fallback — use what they typed
-                        finishFlow({ name: name, phone: phone, address: address });
-                    }
-                })
-                .catch(function() {
-                    finishFlow({ name: name, phone: phone, address: address });
-                });
-        } else {
-            finishFlow({ name: name, phone: phone, address: address });
-        }
-    })
-    .catch(function(err) {
-        console.error('Auto-register error:', err);
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalBtnHtml;
-        }
-        showToast('❌ Network error — please try again');
-    });
+    showPhoneConfirmation(name, phone, address, payment);
 }
 // ============================================================
 // PHONE CONFIRMATION (replaces the old OTP flow)
@@ -2313,7 +2258,7 @@ function submitOrder(order, name, phone, address, payment, orderSummary, subtota
         // Clear cart and discount
                cart = [];
         appliedDiscount = null;
-        localStorage.removeItem('harvestCart');
+        localStorage.removeItem('nabzCart');
         renderMenu();      // ← re-render menu items to reset their qty displays
         renderCart();
 
@@ -2431,7 +2376,7 @@ function closeConfirmation() {
 
         try {
         cart = [];
-        localStorage.removeItem('harvestCart');
+        localStorage.removeItem('nabzCart');
         window.tempCoordinates = null;
         renderMenu();      // ← reset menu items
         renderCart();
@@ -2711,42 +2656,67 @@ function showToast(msg, type) {
 // ============================================================
 // GOOGLE PLACES
 // ============================================================
-function initAutocomplete() {
-    var input = document.getElementById('deliveryAddress');
-    if (!input) return;
+// Attach Google Places autocomplete to any input by ID.
+// onPlaceSelected(place, input) is called after a place is picked.
+function attachAutocomplete(inputId, onPlaceSelected) {
+    var input = document.getElementById(inputId);
+    if (!input) return null;
     try {
         var autocomplete = new google.maps.places.Autocomplete(input, {
-            types: ['geocode', 'establishment'],
-            componentRestrictions: { country: 'bh' }
+            types: ['geocode', 'establishment']
         });
-       autocomplete.addListener('place_changed', function() {
-    var place = autocomplete.getPlace();
-    if (place.formatted_address) {
-        input.value = place.formatted_address;
-        var status = document.getElementById('locationStatus');
-        status.textContent = '✅ Address selected: ' + place.formatted_address;
-        status.style.color = '#27ae60';
+        autocomplete.addListener('place_changed', function() {
+            var place = autocomplete.getPlace();
+            if (place && place.formatted_address) {
+                input.value = place.formatted_address;
+                if (typeof onPlaceSelected === 'function') {
+                    onPlaceSelected(place, input);
+                }
+            }
+        });
+        return autocomplete;
+    } catch (e) {
+        console.log('Google Places error for ' + inputId + ':', e);
+        return null;
+    }
+}
 
-        // 🆕 Save coordinates for the driver
+function initAutocomplete() {
+    // 1) Checkout delivery address — saves to window.tempCoordinates
+    attachAutocomplete('deliveryAddress', function(place) {
+        var status = document.getElementById('locationStatus');
+        if (status) {
+            status.textContent = '✅ Address selected: ' + place.formatted_address;
+            status.style.color = '#27ae60';
+        }
         if (place.geometry && place.geometry.location) {
             window.tempCoordinates = {
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng()
             };
-            console.log('📍 Coordinates saved:', window.tempCoordinates);
+            console.log('📍 Checkout coords:', window.tempCoordinates);
         }
-    }
-});
-    } catch (e) {
-        console.log('Google Places error:', e);
+    });
+
+    // 2) Signup address — saves to window.tempSignupCoordinates
+    attachAutocomplete('custRegAddress', function(place) {
+        if (place.geometry && place.geometry.location) {
+            window.tempSignupCoordinates = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+            };
+            console.log('📍 Signup coords:', window.tempSignupCoordinates);
+        }
+    });
+}
+function gm_authFailure() {
+    var status = document.getElementById('locationStatus');
+    if (status) {
+        status.textContent = '⚠️ Address search unavailable. Please enter address manually.';
+        status.style.color = '#e74c3c';
     }
 }
 
-function gm_authFailure() {
-    var status = document.getElementById('locationStatus');
-    status.textContent = '⚠️ Address search unavailable. Please enter address manually.';
-    status.style.color = '#e74c3c';
-}
 
 // ============================================================
 // REPEAT LAST ORDER
