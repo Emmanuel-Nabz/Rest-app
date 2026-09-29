@@ -2125,18 +2125,7 @@ function removeDiscount() {
 // CHECKOUT / VERIFICATION
 // ============================================================
 function checkout() {
-    var customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
-    if (!customer) {
-        pendingCheckout = true;
-        var section = document.getElementById('customerLoginSection');
-        section.style.display = 'block';
-        document.getElementById('loginPrompt').style.display = 'block';
-        document.getElementById('customerLoginForm').style.display = 'none';
-        document.getElementById('customerRegisterForm').style.display = 'none';
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-    }
-
+    // 1) Cart must have items and meet the minimum
     if (cart.length === 0) {
         showToast('🛒 Your cart is empty — add some items first');
         return;
@@ -2150,6 +2139,7 @@ function checkout() {
         return;
     }
 
+    // 2) Grab what they typed in Contact Details
     var name = document.getElementById('customerName').value.trim();
     var countryCodeElement = document.getElementById('countryCode');
     var countryCode = countryCodeElement ? countryCodeElement.value : '+973';
@@ -2160,11 +2150,97 @@ function checkout() {
     var phone = normalizePhone(phoneNumber, countryCode);
     console.log('📱 Checkout phone:', phoneNumber, '+', countryCode, '→', phone);
 
+    // 3) Validate what they typed — no more bouncing to sign-in
     if (!name) { showToast('👤 Please enter your full name'); return; }
     if (!phoneNumber) { showToast('📱 Please enter your phone number'); return; }
     if (!address) { showToast('📍 Please enter your delivery address'); return; }
 
-    showPhoneConfirmation(name, phone, address, payment);
+    // 4) If already logged in → just go to confirmation
+    var customer = null;
+    try {
+        customer = JSON.parse(localStorage.getItem('nabzCurrentCustomer'));
+    } catch (e) {}
+
+    if (customer && customer.phone) {
+        showPhoneConfirmation(name, phone, address, payment);
+        return;
+    }
+
+    // 5) Not logged in — silently register using the typed details
+    var btn = document.querySelector('.checkout-cta');
+    var originalBtnHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating your account…';
+    }
+
+    fetch(API + '/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: name,
+            phone: phone,
+            address: address,
+            latitude: window.tempCoordinates ? window.tempCoordinates.lat : null,
+            longitude: window.tempCoordinates ? window.tempCoordinates.lng : null
+        })
+    })
+    .then(function(res) {
+        return res.json().then(function(d) { return { ok: res.ok, status: res.status, data: d }; });
+    })
+    .then(function(result) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
+
+        // Already registered? Treat as success and continue.
+        var alreadyExists = false;
+        if (result.status === 400 && result.data && result.data.error &&
+            result.data.error.toLowerCase().indexOf('already') !== -1) {
+            alreadyExists = true;
+        }
+
+        if (!result.ok && !alreadyExists) {
+            showToast('❌ ' + ((result.data && result.data.error) || 'Could not save your details'), 'error');
+            return;
+        }
+
+        var finishFlow = function(cust) {
+            localStorage.setItem('nabzCurrentCustomer', JSON.stringify(cust));
+            localStorage.setItem('nabzLastPhone', cust.phone || phone);
+            showCustomerWelcome(cust);
+            prefillCustomerDetails(cust);
+            checkFirstOrderStatus();
+            showPhoneConfirmation(name, phone, address, payment);
+        };
+
+        if (alreadyExists) {
+            // Look up the existing customer so we save their real id/address
+            fetch(API + '/customers/lookup?phone=' + encodeURIComponent(phone))
+                .then(function(r) { return r.json(); })
+                .then(function(existing) {
+                    if (existing && !existing.error) {
+                        finishFlow(existing);
+                    } else {
+                        finishFlow({ name: name, phone: phone, address: address });
+                    }
+                })
+                .catch(function() {
+                    finishFlow({ name: name, phone: phone, address: address });
+                });
+        } else {
+            finishFlow({ name: name, phone: phone, address: address });
+        }
+    })
+    .catch(function(err) {
+        console.error('Auto-register error:', err);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
+        showToast('❌ Network error — please try again', 'error');
+    });
 }
 // ============================================================
 // PHONE CONFIRMATION (replaces the old OTP flow)
